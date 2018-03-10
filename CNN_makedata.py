@@ -64,7 +64,7 @@ def main():
     X_train, X_test, y_train, y_test = \
         cross_validation.train_test_split(X, Y, test_size = 0.4)
     xy = (X_train, X_test, y_train, y_test)
-    np.save("./train/data.npy", xy)
+    np.save("data.npy", xy)
 
 if __name__ == '__main__':
     main()
