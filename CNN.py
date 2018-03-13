@@ -1,30 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
 from keras.models import Sequential
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils import np_utils
-import numpy as np
 
 root_dir = "./train/"
 categories = ['ファミリマート_0', 'ファミリマート_1', 'ファミマ!!_0', 'サンクス_0', 'ファミマ!!_1', 'サークルK_0']
 nb_classes = len(categories)
 
-def main():
-    X_train, X_test, y_train, y_test = np.load("data.npy")
-
-    X_train = X_train.astype("float") / 255
-    X_test  = X_test.astype("float")  / 255
-
-    y_train = np_utils.to_categorical(y_train, nb_classes)
-    y_test  = np_utils.to_categorical(y_test, nb_classes)
-
-    model = model_train(X_train, y_train)
-    model_eval(model, X_test, y_test)
-
 def build_model(in_shape):
     model = Sequential()
     model.add(Convolution2D(32, 3, 3,
-	border_mode='same',
-	input_shape=in_shape))
+                            border_mode='same',
+                            input_shape=in_shape))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
@@ -39,23 +29,53 @@ def build_model(in_shape):
     model.add(Dropout(0.5))
     model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
+
+    return model
+
+def main():
+    # load dataset
+    trX, valX, trY, valY = np.load("data.npy")
+
+    trX = trX.astype("float") / 255
+    valX  = valX.astype("float")  / 255
+
+    trY = np_utils.to_categorical(trY, nb_classes)
+    valY  = np_utils.to_categorical(valY, nb_classes)
+
+    # load model
+    model = build_model(trX.shape[1:])
+
+    # compile model
     model.compile(loss='categorical_crossentropy',
-	optimizer='rmsprop',
-	metrics=['accuracy'])
-    return model
+                  optimizer='rmsprop',
+                  metrics=['accuracy'])
 
-def model_train(X, y):
-    model = build_model(X.shape[1:])
-    model.fit(X, y, batch_size=32, nb_epoch=30)
-    hdf5_file = "model.hdf5"
-    model.save_weights(hdf5_file)
-    return model
+    # fit model
+    history = model.fit(trX, trY,
+                        nb_epoch=10,
+                        verbose=2,
+                        validation_data=(valX, valY))
 
-def model_eval(model, X, y):
-    score = model.evaluate(X, y)
-    print('loss=', score[0])
-    print('accuracy=', score[1])
-    print (time.time()-start_time)
+    # save model
+    model.save('CNN.h5')
+
+    # summarize history for accuracy
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
 
 if __name__ == "__main__":
     main()
