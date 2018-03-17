@@ -44,9 +44,9 @@ def getThresholdImageForContours(path):
     f = lambda x: 255 if x > threshold else 0
 
     # thresholdで二値のarrayに変換
-    img_red_c1 = np.frompyfunc(f,1,1)(img_red_c1)
-    img_blue_c1 = np.frompyfunc(f,1,1)(img_blue_c1)
-    img_green_c1 = np.frompyfunc(f,1,1)(img_green_c1)
+    img_red_c1 = np.frompyfunc(f,1,1)(img_red_c1).astype('uint8')
+    img_blue_c1 = np.frompyfunc(f,1,1)(img_blue_c1).astype('uint8')
+    img_green_c1 = np.frompyfunc(f,1,1)(img_green_c1).astype('uint8')
 
     img_blue_c3 = cv2.merge((img_blue_c1, zeros, zeros))
     img_green_c3 = cv2.merge((zeros, img_green_c1, zeros))
