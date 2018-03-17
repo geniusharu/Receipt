@@ -11,8 +11,8 @@ filepath = 'train.tsv'
 categories = ['ファミリマート_0', 'ファミリマート_1', 'ファミマ!!_0', 'サンクス_0', 'ファミマ!!_1', 'サークルK_0']
 categories_dict = {'ファミリマート_0':0, 'ファミリマート_1':1, 'ファミマ!!_0':2, 'サンクス_0':3, 'ファミマ!!_1':4, 'サークルK_0':5}
 nb_classes = len(categories)
-image_size_w = 64
-image_size_h = 64
+image_size_w = 256
+image_size_h = 256
 
 # 新しいラベルを生成する関数
 def get_New_cn_name(cn_name, new_flag):
@@ -52,9 +52,13 @@ def main():
         img = img.resize((image_size_w, image_size_h))
         data = np.asarray(img)
         label = df['cn_name2'][df.file_name == fn[:-8] + ".jpg"]
-        label_num = categories_dict[label.iloc[0]]
-        X.append(data)
-        Y.append(label_num)
+        try:
+            label_num = categories_dict[label.iloc[0]]
+            X.append(data)
+            Y.append(label_num)
+        except IndexError:
+            continue
+
         print(fn + ' finished')
 
     X = np.array(X)
