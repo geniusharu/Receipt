@@ -122,7 +122,11 @@ def createRotateImage(src):
         img_th_for_contours = getThresholdImageForContours(src + "/" + pict_name)
 
         # 切り取り
-        img_ext = getContours(img_th,img_th_for_contours)
+        try:
+            # とりあえず実行できるようにindex error時はスキップするように変更しときます。
+            img_ext = getContours(img_th,img_th_for_contours)
+        except IndexError:
+            continue
 
         # PIL形式へ変換
         raw_data = Image.fromarray(img_ext)
