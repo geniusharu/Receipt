@@ -40,24 +40,13 @@ def getThresholdImageForContours(path):
     else:
         threshold = mean
 
-    for i in range(len(img_red_c1)):
-        for j in range(len(img_red_c1[i])):
-            if img_red_c1[i][j] > threshold:
-                img_red_c1[i][j] = 255
-            else:
-                img_red_c1[i][j] = 0
-    for i in range(len(img_blue_c1)):
-        for j in range(len(img_blue_c1[i])):
-            if img_blue_c1[i][j] > threshold:
-                img_blue_c1[i][j] = 255
-            else:
-                img_blue_c1[i][j] = 0
-    for i in range(len(img_green_c1)):
-        for j in range(len(img_green_c1[i])):
-            if img_green_c1[i][j] > threshold:
-                img_green_c1[i][j] = 255
-            else:
-                img_green_c1[i][j] = 0
+    # 変換用のlambda関数
+    f = lambda x: 255 if x > threshold else 0
+
+    # thresholdで二値のarrayに変換
+    img_red_c1 = np.frompyfunc(f,1,1)(img_red_c1)
+    img_blue_c1 = np.frompyfunc(f,1,1)(img_blue_c1)
+    img_green_c1 = np.frompyfunc(f,1,1)(img_green_c1)
 
     img_blue_c3 = cv2.merge((img_blue_c1, zeros, zeros))
     img_green_c3 = cv2.merge((zeros, img_green_c1, zeros))
@@ -96,7 +85,7 @@ def getContours(img_th,img_th_for_contours):
     tmp_df.loc[:,"rank"] = tmp_df.loc[:,"area"].rank(ascending=False,method='max')
     for ix in tmp_df[tmp_df.loc[:,"rank"] == 1.0].index: # 面積が大きい囲いのindexを取得
         id = ix
-    
+
     def getPartImageByRect(rect):
         return img_th[rect[0]:rect[1], rect[2]:rect[3]]
 
