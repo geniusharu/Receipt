@@ -4,6 +4,8 @@ import cv2
 from tqdm import tqdm
 import pandas as pd
 from copy import deepcopy
+import numpy as np
+import math
 
 # グレースケールへ変換
 def getGrayScaleImage(path):
@@ -16,6 +18,58 @@ def getThresholdImage(img_gray):
     img_th = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
                                     cv2.THRESH_BINARY, 15, 5)
     return img_th
+
+# 切り取り用の二値画像を生成
+def getThresholdImageForContours(path):
+    img = cv2.imread(path)
+
+    # ゼロ埋めの画像配列
+    if len(img.shape) == 3:
+        height, width, channels = img.shape[:3]
+    else:
+        height, width = img.shape[:2]
+    zeros = np.zeros((height, width), img.dtype)
+
+    # RGB分離
+    img_blue_c1, img_green_c1, img_red_c1 = cv2.split(img)
+
+    vmax = max(img_red_c1.max(),img_blue_c1.max(),img_green_c1.max())
+    mean = max(img_red_c1.mean(), img_blue_c1.mean(), img_green_c1.mean())
+    if vmax == 255 and mean > vmax*0.6:
+        threshold = vmax*0.7
+    else:
+        threshold = mean
+
+    for i in range(len(img_red_c1)):
+        for j in range(len(img_red_c1[i])):
+            if img_red_c1[i][j] > threshold:
+                img_red_c1[i][j] = 255
+            else:
+                img_red_c1[i][j] = 0
+    for i in range(len(img_blue_c1)):
+        for j in range(len(img_blue_c1[i])):
+            if img_blue_c1[i][j] > threshold:
+                img_blue_c1[i][j] = 255
+            else:
+                img_blue_c1[i][j] = 0
+    for i in range(len(img_green_c1)):
+        for j in range(len(img_green_c1[i])):
+            if img_green_c1[i][j] > threshold:
+                img_green_c1[i][j] = 255
+            else:
+                img_green_c1[i][j] = 0
+
+    img_blue_c3 = cv2.merge((img_blue_c1, zeros, zeros))
+    img_green_c3 = cv2.merge((zeros, img_green_c1, zeros))
+    img_red_c3 = cv2.merge((zeros, zeros, img_red_c1))
+
+    img_red2gray = cv2.cvtColor(img_red_c3,  cv2.COLOR_BGR2GRAY)
+    img_blue2gray = cv2.cvtColor(img_blue_c3, cv2.COLOR_BGR2GRAY)
+    img_green2gray = cv2.cvtColor(img_green_c3, cv2.COLOR_BGR2GRAY)
+
+    img_white = img_red2gray + img_blue2gray + img_green2gray
+
+    return img_white
 
 # 輪郭を抽出するための関数(拾い物)
 def getRectByPoints(points):
@@ -32,25 +86,23 @@ def getRectByPoints(points):
     bottom = max(points[2][1], points[3][1])
     return (top, bottom, left, right)
 
-# 輪郭を抽出
-def getContours(img_th):
-    img_th2 = deepcopy(img_th)
-    image, contours, hierarchy = cv2.findContours(img_th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+# 切り取ります
+def getContours(img_th,img_th_for_contours):
+    img_th_for_contours2 = deepcopy(img_th_for_contours)
+    image, contours, hierarchy = cv2.findContours(img_th_for_contours2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     tmp_dict = {i:cv2.contourArea(contours[i]) for i in range(len(contours))}
     tmp_df = pd.DataFrame.from_dict(tmp_dict,orient="index")
     tmp_df.columns = ["area"] # 面積
     tmp_df.loc[:,"rank"] = tmp_df.loc[:,"area"].rank(ascending=False,method='max')
-    for ix in tmp_df[tmp_df.loc[:,"rank"] == 2.0].index: # 面積が大きい囲いのindexを取得
+    for ix in tmp_df[tmp_df.loc[:,"rank"] == 1.0].index: # 面積が大きい囲いのindexを取得
         id = ix
-        print(ix)
     
     def getPartImageByRect(rect):
         return img_th[rect[0]:rect[1], rect[2]:rect[3]]
 
-    cnt =contours[ix]
+    cnt =contours[id]
     arclen = cv2.arcLength(cnt, True)
     approx = cv2.approxPolyDP(cnt, 0.02*arclen, True)
-    print(approx)
     rect = getRectByPoints(approx)
     return getPartImageByRect(rect)
 
@@ -77,11 +129,14 @@ def createRotateImage(src):
         # グレースケール画像を二値画像へ変換
         img_th = getThresholdImage(img_gray)
 
-        # 切り取り（まだエラーがあるのでコメントアウト中）
-        #img_ext = getContours(img_th)
+        # 切り取り用の二値画像を別途用意
+        img_th_for_contours = getThresholdImageForContours(src + "/" + pict_name)
+
+        # 切り取り
+        img_ext = getContours(img_th,img_th_for_contours)
 
         # PIL形式へ変換
-        raw_data = Image.fromarray(img_th)
+        raw_data = Image.fromarray(img_ext)
 
         rotate_000 = raw_data.rotate(0, expand = True) # 回転させない画像も保存するように変更
         rotate_000.save("./rotateimage/" + pict_name[:-4] +"_000.jpg")
@@ -94,7 +149,7 @@ def createRotateImage(src):
 
         #print(pict_path + ' finished') # 変換の進捗確認用に追加
         #cnt = cnt + 1
-        #if cnt > 5:
+        #if cnt > 4:
         #    break
 
 if __name__ == "__main__":
