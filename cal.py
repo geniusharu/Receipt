@@ -19,46 +19,55 @@ def getThresholdImage(img_gray):
                                     cv2.THRESH_BINARY, 15, 5)
     return img_th
 
+def getMedian(data): # 拾い物
+    N = len(data)
+    data.sort()
+    # 偶数の場合
+    if N % 2 == 0:
+        median1 = N/2
+        median2 = N/2 + 1
+        #pythonでは要素を0から数えるため-1します。
+        #また除算演算子は結果が整数でも小数点を返すので(6 / 3 = 3.0)int関数で整数にします
+        median1 = int(median1) - 1
+        median2 = int(median2) - 1
+        median = data[median1]/2.0 + data[median2]/2.0
+        return median
+    # 奇数の場合
+    else:
+        median = (N + 1) / 2
+        #pythonでは要素を0から数えるため-1します。
+        median = int(median) - 1
+        median = data[median]
+        return median
+
 # 切り取り用の二値画像を生成
 def getThresholdImageForContours(path):
     img = cv2.imread(path)
 
-    # ゼロ埋めの画像配列
-    if len(img.shape) == 3:
-        height, width, channels = img.shape[:3]
-    else:
-        height, width = img.shape[:2]
-    zeros = np.zeros((height, width), img.dtype)
+    # 元画像の明度を計測
+    brightness_list = [max(row[ix])/2.0 + min(row[ix])/2.0  for row in img for ix in range(len(img[0]))]
+    brightness_avg = np.mean(brightness_list)
+    brightness_median = getMedian(brightness_list)
+    brightness = min(brightness_median, brightness_avg)
 
-    # RGB分離
-    img_blue_c1, img_green_c1, img_red_c1 = cv2.split(img)
+    threshold = brightness
+    
+    # ペナルティーを計測白っぽければRGBのばらつきが少ないという想定
+    penalty_list = [np.std(row[ix])  for row in img for ix in range(len(img[0]))]
+    avg_std = np.mean(penalty_list)
+    std_std = np.std(penalty_list)
+    f1 = lambda x: 0 if x > avg_std + 2 * std_std else 1
+    penalty_list = np.frompyfunc(f1,1,1)(penalty_list).astype("uint8") 
+    penalty_array = np.reshape(penalty_list,(len(img),len(img[0])))    
 
-    vmax = max(img_red_c1.max(),img_blue_c1.max(),img_green_c1.max())
-    mean = max(img_red_c1.mean(), img_blue_c1.mean(), img_green_c1.mean())
-    if vmax == 255 and mean > vmax*0.6:
-        threshold = vmax*0.7
-    else:
-        threshold = mean
+    # 明度がひくい点とペナルティーが大きい点を0にして行きます。
+    my_result_tmp = cv2.cvtColor(img,  cv2.COLOR_BGR2GRAY) * penalty_array
+    f2 = lambda x: x//1
+    my_result_tmp = np.frompyfunc(f2,1,1)(my_result_tmp).astype('uint8')
+    f3 = lambda x: x if x > threshold else 0
+    my_result = np.frompyfunc(f3,1,1)(my_result_tmp).astype('uint8')
 
-    # 変換用のlambda関数
-    f = lambda x: 255 if x > threshold else 0
-
-    # thresholdで二値のarrayに変換
-    img_red_c1 = np.frompyfunc(f,1,1)(img_red_c1).astype('uint8')
-    img_blue_c1 = np.frompyfunc(f,1,1)(img_blue_c1).astype('uint8')
-    img_green_c1 = np.frompyfunc(f,1,1)(img_green_c1).astype('uint8')
-
-    img_blue_c3 = cv2.merge((img_blue_c1, zeros, zeros))
-    img_green_c3 = cv2.merge((zeros, img_green_c1, zeros))
-    img_red_c3 = cv2.merge((zeros, zeros, img_red_c1))
-
-    img_red2gray = cv2.cvtColor(img_red_c3,  cv2.COLOR_BGR2GRAY)
-    img_blue2gray = cv2.cvtColor(img_blue_c3, cv2.COLOR_BGR2GRAY)
-    img_green2gray = cv2.cvtColor(img_green_c3, cv2.COLOR_BGR2GRAY)
-
-    img_white = img_red2gray + img_blue2gray + img_green2gray
-
-    return img_white
+    return my_result
 
 # 輪郭を抽出するための関数(拾い物)
 def getRectByPoints(points):
@@ -109,7 +118,7 @@ def createRotateImage(src):
         os.mkdir("./rotateimage")
 
     pict_name_list = os.listdir(src)
-    #cnt = 0
+    cnt = 0
     for pict_name in tqdm(sorted(pict_name_list)):
 
         # 画像をグレースケールへ変換
@@ -120,6 +129,9 @@ def createRotateImage(src):
 
         # 切り取り用の二値画像を別途用意
         img_th_for_contours = getThresholdImageForContours(src + "/" + pict_name)
+
+        tmp = Image.fromarray(img_th_for_contours)
+        tmp.save("test_" + pict_name)
 
         # 切り取り
         try:
@@ -144,9 +156,9 @@ def createRotateImage(src):
             continue
 
         #print(pict_path + ' finished') # 変換の進捗確認用に追加
-        #cnt = cnt + 1
-        #if cnt > 4:
-        #    break
+        cnt = cnt + 1
+        if cnt > 10:
+            break
 
 if __name__ == "__main__":
     createRotateImage("./train")
