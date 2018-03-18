@@ -140,7 +140,7 @@ def createRotateImage(src):
             rotate_180.save("./rotateimage/" + pict_name[:-4] + "_180.jpg")
             rotate_270 = raw_data.rotate(270, expand=True)
             rotate_270.save("./rotateimage/" + pict_name[:-4] + "_270.jpg")
-        except SyetemError:
+        except SystemError:
             continue
 
         #print(pict_path + ' finished') # 変換の進捗確認用に追加
