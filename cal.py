@@ -131,14 +131,17 @@ def createRotateImage(src):
         # PIL形式へ変換
         raw_data = Image.fromarray(img_ext)
 
-        rotate_000 = raw_data.rotate(0, expand = True) # 回転させない画像も保存するように変更
-        rotate_000.save("./rotateimage/" + pict_name[:-4] +"_000.jpg")
-        rotate_090 = raw_data.rotate(90, expand = True)
-        rotate_090.save("./rotateimage/" + pict_name[:-4] +"_090.jpg")
-        rotate_180 = raw_data.rotate(180, expand=True)
-        rotate_180.save("./rotateimage/" + pict_name[:-4] + "_180.jpg")
-        rotate_270 = raw_data.rotate(270, expand=True)
-        rotate_270.save("./rotateimage/" + pict_name[:-4] + "_270.jpg")
+        try:
+            rotate_000 = raw_data.rotate(0, expand = True) # 回転させない画像も保存するように変更
+            rotate_000.save("./rotateimage/" + pict_name[:-4] +"_000.jpg")
+            rotate_090 = raw_data.rotate(90, expand = True)
+            rotate_090.save("./rotateimage/" + pict_name[:-4] +"_090.jpg")
+            rotate_180 = raw_data.rotate(180, expand=True)
+            rotate_180.save("./rotateimage/" + pict_name[:-4] + "_180.jpg")
+            rotate_270 = raw_data.rotate(270, expand=True)
+            rotate_270.save("./rotateimage/" + pict_name[:-4] + "_270.jpg")
+        except SyetemError:
+            continue
 
         #print(pict_path + ' finished') # 変換の進捗確認用に追加
         #cnt = cnt + 1
