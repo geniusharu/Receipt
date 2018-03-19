@@ -1,11 +1,12 @@
-from PIL import Image
-import os
 import cv2
-from tqdm import tqdm
-import pandas as pd
-from copy import deepcopy
-import numpy as np
 import math
+import numpy as np
+import pandas as pd
+import os
+
+from copy import deepcopy
+from PIL import Image
+from tqdm import tqdm
 
 # グレースケールへ変換
 def getGrayScaleImage(path):
@@ -19,46 +20,25 @@ def getThresholdImage(img_gray):
                                     cv2.THRESH_BINARY, 15, 5)
     return img_th
 
-def getMedian(data): # 拾い物
-    N = len(data)
-    data.sort()
-    # 偶数の場合
-    if N % 2 == 0:
-        median1 = N/2
-        median2 = N/2 + 1
-        #pythonでは要素を0から数えるため-1します。
-        #また除算演算子は結果が整数でも小数点を返すので(6 / 3 = 3.0)int関数で整数にします
-        median1 = int(median1) - 1
-        median2 = int(median2) - 1
-        median = data[median1]/2.0 + data[median2]/2.0
-        return median
-    # 奇数の場合
-    else:
-        median = (N + 1) / 2
-        #pythonでは要素を0から数えるため-1します。
-        median = int(median) - 1
-        median = data[median]
-        return median
-
 # 切り取り用の二値画像を生成
 def getThresholdImageForContours(path):
     img = cv2.imread(path)
 
     # 元画像の明度を計測
-    brightness_list = [max(row[ix])/2.0 + min(row[ix])/2.0  for row in img for ix in range(len(img[0]))]
+    brightness_list = np.max(img, axis=2) /2.0 + np.min(img, axis=2) /2.0 # numpy使って爆速で走るように変更
     brightness_avg = np.mean(brightness_list)
-    brightness_median = getMedian(brightness_list)
+    brightness_median = np.median(brightness_list)
     brightness = min(brightness_median, brightness_avg)
 
     threshold = brightness
-    
+
     # ペナルティーを計測白っぽければRGBのばらつきが少ないという想定
-    penalty_list = [np.std(row[ix])  for row in img for ix in range(len(img[0]))]
+    penalty_list = np.std(img, axis=2) # numpy使って爆速で走るように変更
     avg_std = np.mean(penalty_list)
     std_std = np.std(penalty_list)
     f1 = lambda x: 0 if x > avg_std + 2 * std_std else 1
-    penalty_list = np.frompyfunc(f1,1,1)(penalty_list).astype("uint8") 
-    penalty_array = np.reshape(penalty_list,(len(img),len(img[0])))    
+    penalty_list = np.frompyfunc(f1,1,1)(penalty_list).astype("uint8")
+    penalty_array = np.reshape(penalty_list,(img.shape[0],img.shape[1]))
 
     # 明度がひくい点とペナルティーが大きい点を0にして行きます。
     my_result_tmp = cv2.cvtColor(img,  cv2.COLOR_BGR2GRAY) * penalty_array
