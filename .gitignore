@@ -1,4 +1,7 @@
 /train/
+/test/
 /rotateimage
+/rotateimage_test
 /train.tsv
 /.idea/
+/.ipynb_checkpoints/

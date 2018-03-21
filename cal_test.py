@@ -91,11 +91,11 @@ def createRotateImage(src):
     else:
         print(src + "フォルダが存在しないため終了します")
         quit()
-    if os.path.exists("./rotateimage"):
+    if os.path.exists("./rotateimage_test"):
         pass
     else:
         print("rotateimageフォルダを作成します")
-        os.mkdir("./rotateimage")
+        os.mkdir("./rotateimage_test")
 
     pict_name_list = os.listdir(src)
     cnt = 0
@@ -125,13 +125,13 @@ def createRotateImage(src):
 
         try:
             rotate_000 = raw_data.rotate(0, expand = True) # 回転させない画像も保存するように変更
-            rotate_000.save("./rotateimage/" + pict_name[:-4] +"_000.jpg")
+            rotate_000.save("./rotateimage_test/" + pict_name[:-4] +"_000.jpg")
             rotate_090 = raw_data.rotate(90, expand = True)
-            rotate_090.save("./rotateimage/" + pict_name[:-4] +"_090.jpg")
+            rotate_090.save("./rotateimage_test/" + pict_name[:-4] +"_090.jpg")
             rotate_180 = raw_data.rotate(180, expand=True)
-            rotate_180.save("./rotateimage/" + pict_name[:-4] + "_180.jpg")
+            rotate_180.save("./rotateimage_test/" + pict_name[:-4] + "_180.jpg")
             rotate_270 = raw_data.rotate(270, expand=True)
-            rotate_270.save("./rotateimage/" + pict_name[:-4] + "_270.jpg")
+            rotate_270.save("./rotateimage_test/" + pict_name[:-4] + "_270.jpg")
         except SystemError:
             continue
 
@@ -141,4 +141,4 @@ def createRotateImage(src):
 #            break
 
 if __name__ == "__main__":
-    createRotateImage("./train")
+    createRotateImage("./test")
