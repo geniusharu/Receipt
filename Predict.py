@@ -10,12 +10,13 @@ from ReceiptInfo import ReceiptInfo
 別途実装したReceiptInfoモジュールを使用。
 """
 
-def main(folder, output):
+# レシート情報の集計用
+def aggregateReceiptInfo(folder):
 
-    pict_names = os.listdir(folder) # 画像のファイル名を取得
+    pict_names = os.listdir(folder) # 対象フォルダ内の画像ファイル名を取得
     res = {} # 最終結果の格納用
 
-    for pict_name in tqdm(pict_names[:5]): #最初の5枚で確認するように変更してます
+    for pict_name in tqdm(pict_names): #最初の5枚で確認するように変更してます
         pict_info = {} # 画像ごとの属性を格納用
 
         img_path = folder + pict_name # 画像のパスを生成
@@ -38,13 +39,31 @@ def main(folder, output):
 
         res[pict_name] = pict_info
 
-    res = pd.DataFrame(res)
-    res = res.T
-    res.to_csv(output)
+#    res = pd.DataFrame(res)
+#    res = res.T
+#    res.to_csv(output)
 
     return res
 
+# 提出用のtsvファイル生成用
+def generateSubmitFile(output,folder,valDatapath):
+
+    valData = pd.read_csv(valDatapath, sep='\t') # 評価用データの読み込み
+    allReceiptInfo = aggregateReceiptInfo(folder) # testフォルダ以下のレシート情報の集計
+
+    submit = []
+    for f, p in tqdm(zip(valData.file_name, valData.property)):
+        submit.append(allReceiptInfo[f][p])
+
+    submit = pd.Series(submit)
+    submit.to_csv(output, sep='\t', header=False, index=True)
+
+    return submit
+
 if __name__ == '__main__':
-    output = 'predict_test.csv'
-    folder = "./rotateimage/"
-    main(folder, output)
+#    folder = "./rotateimage/"
+#    aggregateReceiptInfo(folder, output)
+    output = 'submit.tsv'
+    folder = "./test/"
+    valDatapath = 'test.tsv'
+    generateSubmitFile(output,folder,valDatapath)
