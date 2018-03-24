@@ -33,9 +33,11 @@ class ReceiptInfo(object):
         # 使用するツール（Tesseract）と言語（日本語）を指定
         self.tool = pyocr.get_available_tools()[0]
         self.lang = self.tool.get_available_languages()[1]
+        self.lang_en = self.tool.get_available_languages()[0]
 
         # 画像データからテキストデータを抽出
         self.text = self.__getTextFromImage(self.img_path)
+        self.text_en = self.__getTextFromImageEn(self.img_path)
 
         # 都道府県のリスト　trainデータ内の個数順にソート済
         self.pref_list = ['東京都', '大阪府', '愛知県', '神奈川県', '千葉県', '埼玉県',
@@ -53,6 +55,51 @@ class ReceiptInfo(object):
                                    lang=self.lang,
                                    builder=pyocr.builders.TextBuilder())
         return text
+    
+    def __getTextFromImageEn(self, img_path):
+        text = self.tool.image_to_string(Image.open(img_path),
+                                   lang=self.lang_en,
+                                   builder=pyocr.builders.TextBuilder())
+        return text
+        
+    # テキストデータを整形の上、１行ごとに分けてリスト化して返します。
+    def text_cleaner(self, text):
+        text = text.replace("　", "")
+        text = text.replace(" ", "")
+        text = text.replace("（", "(")
+        text = text.replace("）", ")")
+        result = [ line for line in text.split('\n') if len(line)>0 ]
+        return result 
+    
+    # text_cleanerのアウトプット（リスト）から、ファミマ文字列があるか確認し、あればTrueを、なければFalseを返します。
+    def check_picture(self, list):
+        result = False
+        for i in range(5):
+            if list[i].find("Fam") > -1 or list[i].find("ami") > -1 or list[i].find("art") > -1:
+                result = True
+            else:
+                pass
+        return result
+    
+    # text_cleanerのアウトプット（リスト）の初めから10要素以内に10文字の数字列があればその値を返し、なければ空のリストを返します。
+    def phone_number_check(self, list):
+        for i in range(10):
+            result = []
+            try:
+                for j in reversed(range(len(list[i]))):
+                    if list[i][j:j+1] == "-" or list[i][j:j+1] == "-" or list[i][j:j+1] == "—": # 同じように見えるけど実は違う文字らしい
+                        pass
+                    elif int(list[i][j:j+1]) >= 0:
+                        result.insert(0,list[i][j:j+1])
+                    if len(result) >= 10:
+                        break  
+            except:
+                pass
+            if len(result) >= 10:
+                break
+        if len(result) < 10:
+            result = []
+        return "".join(result)
 
     # レシート種別
     def get_cn_name(self):
@@ -82,8 +129,12 @@ class ReceiptInfo(object):
         """
         ハイフン"-"なしの10桁の数字
         """
-        # TODO
-        return "1234567890"
+        text = self.text_en  # language は英語を使用
+        text = self.text_cleaner(text)
+        store_tel = self.phone_number_check(text)
+        if store_tel == []: # なければ np.nan にしておく
+            store_tel = np.nan
+        return store_tel
 
     # 商品購入年月日時
     def get_bought_datetime(self):
@@ -145,7 +196,7 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    path = 'zswdmg51_000.jpg'
+    path = 'rotateimage/a01e2wt2_270.jpg'
     receipt = ReceiptInfo(path)
 
     print('cn_name: ' + receipt.get_cn_name())
