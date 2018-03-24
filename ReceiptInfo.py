@@ -129,7 +129,6 @@ class ReceiptInfo(object):
         """
         ハイフン"-"なしの10桁の数字
         """
-        # TODO
         text = self.text_en  # language は英語を使用
         text = self.text_cleaner(text)
         store_tel = self.phone_number_check(text)
