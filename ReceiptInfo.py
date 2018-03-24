@@ -55,13 +55,13 @@ class ReceiptInfo(object):
                                    lang=self.lang,
                                    builder=pyocr.builders.TextBuilder())
         return text
-    
+
     def __getTextFromImageEn(self, img_path):
         text = self.tool.image_to_string(Image.open(img_path),
                                    lang=self.lang_en,
                                    builder=pyocr.builders.TextBuilder())
         return text
-        
+
     # テキストデータを整形の上、１行ごとに分けてリスト化して返します。
     def text_cleaner(self, text):
         text = text.replace("　", "")
@@ -69,8 +69,8 @@ class ReceiptInfo(object):
         text = text.replace("（", "(")
         text = text.replace("）", ")")
         result = [ line for line in text.split('\n') if len(line)>0 ]
-        return result 
-    
+        return result
+
     # text_cleanerのアウトプット（リスト）から、ファミマ文字列があるか確認し、あればTrueを、なければFalseを返します。
     def check_picture(self, list):
         result = False
@@ -80,7 +80,7 @@ class ReceiptInfo(object):
             else:
                 pass
         return result
-    
+
     # text_cleanerのアウトプット（リスト）の初めから10要素以内に10文字の数字列があればその値を返し、なければ空のリストを返します。
     def phone_number_check(self, list):
         for i in range(10):
@@ -92,7 +92,7 @@ class ReceiptInfo(object):
                     elif int(list[i][j:j+1]) >= 0:
                         result.insert(0,list[i][j:j+1])
                     if len(result) >= 10:
-                        break  
+                        break
             except:
                 pass
             if len(result) >= 10:
@@ -118,9 +118,11 @@ class ReceiptInfo(object):
 
         store_pref = np.nan # 初期値はnanにしておく
 
+        # テキスト内に都道府県名の文字列があればそれを返す
         for pref in self.pref_list:
             if pref in self.text:
                 store_pref = pref
+                break
 
         return store_pref
 

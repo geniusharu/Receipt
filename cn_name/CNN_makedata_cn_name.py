@@ -4,15 +4,16 @@ import os, glob
 
 from sklearn import cross_validation
 from PIL import Image
+from tqdm import tqdm
 
 # カテゴリなどの設定
-root_dir = "./rotateimage"
+root_dir = "./rotateimage_test"
 filepath = 'train.tsv'
 categories = ['ファミリマート', 'ファミマ!!', 'サンクス', 'サークルK']
 categories_dict = {'ファミリマート':0, 'ファミマ!!':1, 'サンクス':2, 'サークルK':3}
 nb_classes = len(categories)
-image_size_w = 128
-image_size_h = 128
+image_size_w = 64
+image_size_h = 64
 
 # 新しいラベルのジェネレーター
 def get_New_cn_name(cn_name, new_flag):
@@ -39,15 +40,18 @@ def main():
     # データを変換
     df = setData(filepath)
 
-    # フォルダ以内のファイル名を取得
+    # フォルダ内のファイル名を取得
     filepaths = glob.glob(root_dir + "/*.jpg")
     filenames = os.listdir(root_dir)
 
     # 数値形式に変換
     X = [] # 画像データ
     Y = [] # ラベルデータ
-    for fp, fn in zip(filepaths, filenames):
-        img = Image.open(fp)
+    for fp, fn in tqdm(zip(filepaths, filenames)):
+        try:
+            img = Image.open(fp)
+        except OSError:
+            continue
         img = img.convert("RGB")
         img = img.resize((image_size_w, image_size_h))
         data = np.asarray(img)
@@ -59,17 +63,18 @@ def main():
         except IndexError:
             continue
 
-        print(fn + ' finished')
+#        print(fn + ' finished')
 
     X = np.array(X)
     Y = np.array(Y)
 
     # 学習データとテストデータを分ける
-    X_train, X_test, y_train, y_test = \
-        cross_validation.train_test_split(X, Y, test_size = 0.1)
-    xy = (X_train, X_test, y_train, y_test)
+#    X_train, X_test, y_train, y_test = \
+#        cross_validation.train_test_split(X, Y, test_size = 0.1)
+#    xy = (X_train, X_test, y_train, y_test)
+    xy = (X,Y)
     print("saving data.npy..." )
-    np.save("data.npy", xy)
+    np.save("data_test.npy", xy)
 
 if __name__ == '__main__':
     main()
