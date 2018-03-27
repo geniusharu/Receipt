@@ -119,8 +119,6 @@ class ReceiptInfo(object):
         text = self.text_en  # language は英語を使用
         text = self.text_cleaner(text)
         store_tel = self.phone_number_check(text)
-        if store_tel == []: # なければ np.nan にしておく
-            store_tel = np.nan
         return store_tel
 
     # 商品購入年月日時
