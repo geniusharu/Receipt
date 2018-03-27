@@ -72,34 +72,19 @@ class ReceiptInfo(object):
         return result
 
     # text_cleanerのアウトプット（リスト）から、ファミマ文字列があるか確認し、あればTrueを、なければFalseを返します。
+    # 多分これで同じ結果になると思います。
     def check_picture(self, list):
-        result = False
-        for i in range(5):
-            if list[i].find("Fam") > -1 or list[i].find("ami") > -1 or list[i].find("art") > -1:
-                result = True
-            else:
-                pass
-        return result
+        moji = ' '.join(list[:5]) # listの最初の5要素を結合して文字列を生成
+        res =  "Fam" in moji or "ami" in moji or "art" in moji
+        return res
 
-    # text_cleanerのアウトプット（リスト）の初めから10要素以内に10文字の数字列があればその値を返し、なければ空のリストを返します。
+    # Kuso-codeをfixして高速化
     def phone_number_check(self, list):
-        for i in range(10):
-            result = []
-            try:
-                for j in reversed(range(len(list[i]))):
-                    if list[i][j:j+1] == "-" or list[i][j:j+1] == "-" or list[i][j:j+1] == "—": # 同じように見えるけど実は違う文字らしい
-                        pass
-                    elif int(list[i][j:j+1]) >= 0:
-                        result.insert(0,list[i][j:j+1])
-                    if len(result) >= 10:
-                        break
-            except:
-                pass
-            if len(result) >= 10:
-                break
-        if len(result) < 10:
-            result = []
-        return "".join(result)
+        for l in list[:10]:
+            phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+            phone_number = ''.join(phone_number)
+            if len(phone_number) >=10:
+                return phone_number[:11]
 
     # レシート種別
     def get_cn_name(self):
@@ -199,11 +184,12 @@ class ReceiptInfo(object):
 if __name__ == '__main__':
     # test
     path = 'rotateimage/a01e2wt2_270.jpg'
+#    path = 'zswdmg51_000.jpg' これでテストしたけど日本語のほうがうまく電話番号抜けました
     receipt = ReceiptInfo(path)
 
     print('cn_name: ' + receipt.get_cn_name())
-    print('store_pref: ' + receipt.get_store_pref())
-    print('store_tel: ' + receipt.get_store_tel())
+    print('store_pref: ' + str(receipt.get_store_pref()))
+    print('store_tel: ' + str(receipt.get_store_tel()))
     print('bought_datetime: ' + receipt.get_bought_datetime())
     print('total_price: ' + str(receipt.get_total_price()))
     print('regi_number: ' + receipt.get_regi_number())
