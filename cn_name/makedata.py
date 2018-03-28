@@ -86,7 +86,7 @@ class MakeMultiDataSets(MakeSingleDataSet):
         for filepaths, filenames in zip(filepathlist, filenamelist):
             X=[]
             Y=[]
-            for fp, fn in tqdm(zip(self.filepaths, self.filenames)):
+            for fp, fn in tqdm(zip(filepaths, filenames)):
                 try:
                     y = self.getLabel(fn)
                     x = self.imagePreprocessing(fp)
