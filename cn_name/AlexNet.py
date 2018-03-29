@@ -80,8 +80,10 @@ def AlexNet():
     return model
 
 def main():
-    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10)
+    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
     datasets = md.getDataSet()
+#    for i in range(10):
+#        X, Y = np.load("data" + str(i) + ".npy")
     for i, d in enumerate(datasets):
         X, Y = d
         X = np.array(X)
@@ -101,6 +103,10 @@ def main():
 
         # save model
         model.save('CNN_' + str(i) + '.h5')
+
+        del model #メモリからmodelを消去
+        del X
+        del Y
 
 if __name__ == '__main__':
     main()

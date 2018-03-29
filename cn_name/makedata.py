@@ -75,14 +75,16 @@ class MakeMultiDataSets(MakeSingleDataSet):
     root_dir以下のjpg画像を分割し、複数のデータセットを生成するクラス
     """
 
-    def __init__(self, root_dir, image_size_w, image_size_h, nb_datasets):
+    def __init__(self, root_dir, image_size_w, image_size_h, nb_datasets, isSaveData=False):
         MakeSingleDataSet.__init__(self, root_dir, image_size_w, image_size_h)
         self.nb_datasets =nb_datasets # 分割するデータセット数
+        self.isSaveData = isSaveData #データを保存するかどうか
 
     def getDataSet(self):
         filepathlist = np.array_split(self.filepaths, self.nb_datasets)
         filenamelist = np.array_split(self.filenames, self.nb_datasets)
         res = []
+        cnt=0
         for filepaths, filenames in zip(filepathlist, filenamelist):
             X=[]
             Y=[]
@@ -97,6 +99,10 @@ class MakeMultiDataSets(MakeSingleDataSet):
                 except IndexError:
                     continue
             res.append((X,Y))
+            if self.isSaveData:
+                np.save("data" + str(cnt) +".npy", (X,Y)) #分割したデータを保存
+            cnt+=1
+            del (X,Y)
         return res
 
 class MakeTestDataSet(MakeDataSetBase):
@@ -120,13 +126,9 @@ class MakeTestDataSet(MakeDataSetBase):
         return X
 
 if __name__ == '__main__':
-    root_dir = "./rotateimage"
-#    root_dir2 = "./test2"
-    image_size_w = 64
-    image_size_h = 64
+    ROOT_DIR = "./rotateimage"
+    IMAGE_SIZE_W = 64
+    IMAGE_SIZE_H = 64
 
-#    sd = MakeSingleDataSet(root_dir, image_size_w, image_size_h)
-#    print(sd.getDataSet()[0])
-
-    md = MakeMultiDataSets(root_dir, image_size_w, image_size_h, 10)
-#    print(md.getDataSet())
+    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
+    datasets = md.getDataSet()
