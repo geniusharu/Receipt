@@ -22,8 +22,8 @@ class MakeDataSetBase(object):
     def imagePreprocessing(self, filepath):
         #画像の前処理
         img = cv2.imread(filepath)
-        img = img.resize((self.image_size_w, self.image_size_h)) #画像をリサイズ
-        return img
+        img = cv2.resize(img, (self.image_size_w, self.image_size_h)) #画像をリサイズ
+        return img.astype(float) / 255
 
     def getDataSet(self):
         return None
@@ -102,6 +102,8 @@ class MakeMultiDataSets(MakeSingleDataSet):
                 except IndexError:
                     continue
                 except AttributeError:
+                    continue
+                except cv2.error:
                     continue
             X = np.array(X)
             Y = np.array(Y)
