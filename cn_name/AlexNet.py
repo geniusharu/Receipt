@@ -10,10 +10,11 @@ from keras.utils.np_utils import to_categorical
 from makedata import MakeMultiDataSets
 
 """
-keras内蔵のVGG16を用い、レシートデータを学習データとしてパラメータのfine-tuningを行う。
+AlexNetを使い、画像データから店舗種別を判別する。
 """
 
 ROOT_DIR = "./rotateimage"
+#ROOT_DIR = "./train2"
 CATEGORIES = ['ファミリマート', 'ファミマ!!', 'サンクス', 'サークルK']
 CATEGORIES_DICT = {'ファミリマート':0, 'ファミマ!!':1, 'サンクス':2, 'サークルK':3}
 NB_CLASSES = len(CATEGORIES)
@@ -80,10 +81,11 @@ def AlexNet():
     return model
 
 def main():
-    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
-    datasets = md.getDataSet()
+#    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
+#    datasets = md.getDataSet()
     for i in range(10):
-        X, Y = np.load("data" + str(i) + ".npy")
+        X = np.load("./cn_name/dataX" + str(i) + ".npy")
+        Y = np.load("./cn_name/dataY" + str(i) + ".npy")
 #    for i, d in enumerate(datasets):
 #        X, Y = d
         X = np.array(X)
@@ -102,7 +104,7 @@ def main():
                             verbose=1)
 
         # save model
-        model.save('CNN_' + str(i) + '.h5')
+        model.save('./cn_name/CNN_' + str(i) + '.h5')
 
         del model #メモリからmodelを消去
         del X

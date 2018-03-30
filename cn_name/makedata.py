@@ -108,7 +108,8 @@ class MakeMultiDataSets(MakeSingleDataSet):
             X = np.array(X)
             Y = np.array(Y)
             if self.isSaveData:
-                np.save("data" + str(cnt) +".npy", (X,Y)) #分割したデータを保存
+                np.save("./cn_name/dataX" + str(cnt) +".npy", X) #分割したデータを保存
+                np.save("./cn_name/dataY" + str(cnt) +".npy", Y) #分割したデータを保存
             res.append((X,Y))
             cnt+=1
             del X
