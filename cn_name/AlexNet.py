@@ -82,10 +82,10 @@ def AlexNet():
 def main():
     md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
     datasets = md.getDataSet()
-#    for i in range(10):
-#        X, Y = np.load("data" + str(i) + ".npy")
-    for i, d in enumerate(datasets):
-        X, Y = d
+    for i in range(10):
+        X, Y = np.load("data" + str(i) + ".npy")
+#    for i, d in enumerate(datasets):
+#        X, Y = d
         X = np.array(X)
         Y = to_categorical(Y, NB_CLASSES)
 

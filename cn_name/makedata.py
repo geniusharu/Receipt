@@ -1,3 +1,4 @@
+import cv2
 import pandas as pd
 import numpy as np
 import os, glob
@@ -20,10 +21,9 @@ class MakeDataSetBase(object):
 
     def imagePreprocessing(self, filepath):
         #画像の前処理
-        img = Image.open(filepath)
-        img = img.convert("RGB") #RGBに変換
+        img = cv2.imread(filepath)
         img = img.resize((self.image_size_w, self.image_size_h)) #画像をリサイズ
-        return np.asarray(img).astype(float)/255 # numpy array形式へ変換したものを返す
+        return img
 
     def getDataSet(self):
         return None
@@ -88,21 +88,30 @@ class MakeMultiDataSets(MakeSingleDataSet):
         for filepaths, filenames in zip(filepathlist, filenamelist):
             X=[]
             Y=[]
+#            if cnt <=8:
+#                cnt +=1
+#                continue
             for fp, fn in tqdm(zip(filepaths, filenames)):
                 try:
-                    y = self.getLabel(fn)
                     x = self.imagePreprocessing(fp)
-                    Y.append(y)
+                    y = self.getLabel(fn)
                     X.append(x)
+                    Y.append(y)
                 except OSError:
                     continue
                 except IndexError:
                     continue
-            res.append((X,Y))
+                except AttributeError:
+                    continue
+            X = np.array(X)
+            Y = np.array(Y)
             if self.isSaveData:
                 np.save("data" + str(cnt) +".npy", (X,Y)) #分割したデータを保存
+            res.append((X,Y))
             cnt+=1
-            del (X,Y)
+            del X
+            del Y
+
         return res
 
 class MakeTestDataSet(MakeDataSetBase):
