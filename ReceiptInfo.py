@@ -92,6 +92,18 @@ class ReceiptInfo(object):
             phone_number = ''.join(phone_number)
             if len(phone_number) >=8:
                 return l[-16:]
+    
+    def gross_amount_check(self, list):
+        cnt = 0
+        for line in list:
+            if line.find('合計') > -1:
+                break
+            cnt = cnt + 1
+        tgt_row = list[cnt]
+        tgt_row = tgt_row.replace('フ','7')
+        tgt_row = tgt_row.replace('了','7')
+        my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
+        return my_result
 
     # レシート種別
     def get_cn_name(self):
@@ -143,7 +155,10 @@ class ReceiptInfo(object):
         整数値
         """
         # TODO
-        return 9999
+        text_jp = self.text
+        text_jp = self.text_cleaner(text_jp)
+        gross_amount = self.gross_amount_check(text_jp)
+        return gross_amount
 
     # レジ番号
     def get_regi_number(self):
