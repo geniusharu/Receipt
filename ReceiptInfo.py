@@ -32,7 +32,7 @@ class ReceiptInfo(object):
 
         # 使用するツール（Tesseract）と言語（日本語）を指定
         self.tool = pyocr.get_available_tools()[0]
-        self.lang = self.tool.get_available_languages()[2] # mita envでは[2]
+        self.lang = self.tool.get_available_languages()[1] # mita envでは[2]
         self.lang_en = self.tool.get_available_languages()[0]
 
         # 画像データからテキストデータを抽出
