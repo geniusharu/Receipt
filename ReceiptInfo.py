@@ -32,7 +32,7 @@ class ReceiptInfo(object):
 
         # 使用するツール（Tesseract）と言語（日本語）を指定
         self.tool = pyocr.get_available_tools()[0]
-        self.lang = self.tool.get_available_languages()[1]
+        self.lang = self.tool.get_available_languages()[1] # mita envでは[2]
         self.lang_en = self.tool.get_available_languages()[0]
 
         # 画像データからテキストデータを抽出
@@ -85,6 +85,13 @@ class ReceiptInfo(object):
             phone_number = ''.join(phone_number)
             if len(phone_number) >=10:
                 return phone_number[:11]
+    
+    def card_number_check(self, list):
+        for l in list[-10:]:
+            phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+            phone_number = ''.join(phone_number)
+            if len(phone_number) >=8:
+                return l[-16:]
 
     # レシート種別
     def get_cn_name(self):
@@ -160,7 +167,10 @@ class ReceiptInfo(object):
         iiii********iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
         # TODO
-        return "1234********5678"
+        text = self.text_en  # language は英語を使用
+        text = self.text_cleaner(text)
+        card_number = self.card_number_check(text)
+        return card_number
 
     # 購入した商品の種類数
     def get_num_items(self):
