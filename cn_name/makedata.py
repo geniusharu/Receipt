@@ -16,8 +16,8 @@ class MakeDataSetBase(object):
         self.filepaths = glob.glob(root_dir + "/*.jpg") #ファイルパス
         self.filenames = os.listdir(root_dir) #ファイル名
 
-        self.image_size_w = 64 #画像をリサイズする横幅
-        self.image_size_h = 64 #画像をリサイズする縦幅
+        self.image_size_w = image_size_w #画像をリサイズする横幅
+        self.image_size_h = image_size_h #画像をリサイズする縦幅
 
     def imagePreprocessing(self, filepath):
         #画像の前処理
@@ -59,15 +59,23 @@ class MakeSingleDataSet(MakeDataSetBase):
         Y=[]
         X=[]
         for fp, fn in tqdm(zip(self.filepaths, self.filenames)):
-            try:
-                y = self.getLabel(fn)
-                x = self.imagePreprocessing(fp)
-                Y.append(y)
-                X.append(x)
-            except OSError:
-                continue
-            except IndexError:
-                continue
+#            try:
+            y = self.getLabel(fn)
+            x = self.imagePreprocessing(fp)
+            Y.append(y)
+            X.append(x)
+#            except OSError:
+#                continue
+#            except IndexError:
+#                continue
+#            except AttributeError:
+#                continue
+#            except cv2.error:
+#                continue
+        X = np.array(X)
+        Y = np.array(Y)
+        np.save("./cn_name/dataX_cn_name.npy", X) #分割したデータを保存
+        np.save("./cn_name/dataY_cn_name.npy", Y) #分割したデータを保存
         return (X,Y)
 
 class MakeMultiDataSets(MakeSingleDataSet):
@@ -146,8 +154,8 @@ class MakeTestDataSet(MakeDataSetBase):
 
 if __name__ == '__main__':
     ROOT_DIR = "./rotateimage_test"
-    IMAGE_SIZE_W = 64
-    IMAGE_SIZE_H = 64
+    IMAGE_SIZE_W = 256
+    IMAGE_SIZE_H = 256
 
 #    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
 #    datasets = md.getDataSet()

@@ -86,7 +86,7 @@ class ReceiptInfo(object):
             phone_number = ''.join(phone_number)
             if len(phone_number) >=10:
                 return phone_number[:11]
-    
+
     def card_number_check(self, list_jp, list_en):
         for l in list_jp:
             if l.find('********') > -1:
@@ -105,7 +105,7 @@ class ReceiptInfo(object):
                     phone_number = ''.join(phone_number)
                     if len(phone_number) >=8:
                         return l[-16:]
-    
+
     def gross_amount_check(self, list):
         cnt = 0
         # 合計と記載された行が何行目かを cnt で調べる
@@ -119,7 +119,7 @@ class ReceiptInfo(object):
             tgt_row = tgt_row.replace('了','7')
             my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
         except: # わからないときは108円と予想
-            my_result = 108
+            my_result = 663
         return my_result
 
     # レシート種別
