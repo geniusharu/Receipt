@@ -4,6 +4,7 @@ import pyocr.builders
 
 from datetime import datetime
 from PIL import Image
+import os
 
 class ReceiptInfo(object):
 
@@ -86,23 +87,39 @@ class ReceiptInfo(object):
             if len(phone_number) >=10:
                 return phone_number[:11]
     
-    def card_number_check(self, list):
-        for l in list[-10:]:
-            phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-            phone_number = ''.join(phone_number)
-            if len(phone_number) >=8:
-                return l[-16:]
+    def card_number_check(self, list_jp, list_en):
+        for l in list_jp:
+            if l.find('********') > -1:
+                phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+                phone_number = ''.join(phone_number)
+                if len(phone_number) >=8:
+                    my_result = l[-16:]
+        # my_resultが入ってればそれを返して、入っていなければ英語版を読みに行く
+        try:
+            my_result
+            return my_result
+        except:
+            for l in list_en:
+                if l.find('********') > -1:
+                    phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+                    phone_number = ''.join(phone_number)
+                    if len(phone_number) >=8:
+                        return l[-16:]
     
     def gross_amount_check(self, list):
         cnt = 0
+        # 合計と記載された行が何行目かを cnt で調べる
         for line in list:
-            if line.find('合計') > -1:
+            if line.find('合') > -1 and line.find('算') and line.find('商') == -1 and line.find('品') == -1 and line.find('値') == -1 and line.find('引') == -1 :
                 break
             cnt = cnt + 1
-        tgt_row = list[cnt]
-        tgt_row = tgt_row.replace('フ','7')
-        tgt_row = tgt_row.replace('了','7')
-        my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
+        try:
+            tgt_row = list[cnt]
+            tgt_row = tgt_row.replace('フ','7')
+            tgt_row = tgt_row.replace('了','7')
+            my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
+        except: # わからないときは108円と予想
+            my_result = 108
         return my_result
 
     # レシート種別
@@ -182,9 +199,11 @@ class ReceiptInfo(object):
         iiii********iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
         # TODO
-        text = self.text_en  # language は英語を使用
-        text = self.text_cleaner(text)
-        card_number = self.card_number_check(text)
+        text_jp = self.text
+        text_jp = self.text_cleaner(text_jp)
+        text_en = self.text_en
+        text_en = self.text_cleaner(text_en)
+        card_number = self.card_number_check(text_jp,text_en)
         return card_number
 
     # 購入した商品の種類数
@@ -206,17 +225,24 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    path = 'rotateimage/a01e2wt2_270.jpg'
+#    path = 'rotateimage/a01e2wt2_270.jpg'
 #    path = 'zswdmg51_000.jpg' これでテストしたけど日本語のほうがうまく電話番号抜けました
-    receipt = ReceiptInfo(path)
+#    receipt = ReceiptInfo(path)
 
-    print('cn_name: ' + receipt.get_cn_name())
-    print('store_pref: ' + str(receipt.get_store_pref()))
-    print('store_tel: ' + str(receipt.get_store_tel()))
-    print('bought_datetime: ' + receipt.get_bought_datetime())
-    print('total_price: ' + str(receipt.get_total_price()))
-    print('regi_number: ' + receipt.get_regi_number())
-    print('duty_number: ' + receipt.get_duty_number())
-    print('card_number: ' + receipt.get_card_number())
-    print('num_items: ' + str(receipt.get_num_items()))
-    print('items: ' + str(receipt.get_items()))
+    pict_name_list = os.listdir('./rotateimage')
+    for pict_name in sorted(pict_name_list):
+        if pict_name.find(".jpg") > -1 and pict_name.find('_270') > -1:
+            path = './rotateimage/' + pict_name
+            receipt = ReceiptInfo(path)
+            print('cn_name: ' + receipt.get_cn_name())
+            print('store_pref: ' + str(receipt.get_store_pref()))
+            print('store_tel: ' + str(receipt.get_store_tel()))
+            print('bought_datetime: ' + receipt.get_bought_datetime())
+            print('total_price: ' + str(receipt.get_total_price()))
+            print('regi_number: ' + receipt.get_regi_number())
+            print('duty_number: ' + receipt.get_duty_number())
+            print('card_number: ' + receipt.get_card_number())
+            print('num_items: ' + str(receipt.get_num_items()))
+            print('items: ' + str(receipt.get_items()))
+        else:
+            pass
