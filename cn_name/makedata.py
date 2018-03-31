@@ -114,7 +114,6 @@ class MakeMultiDataSets(MakeSingleDataSet):
             cnt+=1
             del X
             del Y
-
         return res
 
 class MakeTestDataSet(MakeDataSetBase):
@@ -127,20 +126,32 @@ class MakeTestDataSet(MakeDataSetBase):
 
     def getDataSet(self):
         X=[]
+        pict_names = []
         for fp, fn in tqdm(zip(self.filepaths, self.filenames)):
             try:
                 x = self.imagePreprocessing(fp)
                 X.append(x)
+                pict_names.append(fn)
             except OSError:
                 continue
             except IndexError:
                 continue
-        return X
+            except AttributeError:
+                continue
+            except cv2.error:
+                continue
+            except RuntimeError:
+                continue
+        return (np.array(X), np.array(pict_names))
 
 if __name__ == '__main__':
-    ROOT_DIR = "./rotateimage"
+    ROOT_DIR = "./rotateimage_test"
     IMAGE_SIZE_W = 64
     IMAGE_SIZE_H = 64
 
-    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
-    datasets = md.getDataSet()
+#    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
+#    datasets = md.getDataSet()
+    md = MakeTestDataSet(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H)
+    X = md.getDataSet()
+    np.save("./cn_name/data_test.npy", X[0])
+    np.save("./cn_name/test_pict_names.npy", X[1])
