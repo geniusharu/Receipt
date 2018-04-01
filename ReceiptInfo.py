@@ -1,10 +1,12 @@
+import cv2
 import numpy as np
+import os
 import pyocr
 import pyocr.builders
 
 from datetime import datetime
+from keras.models import load_model
 from PIL import Image
-import os
 
 class ReceiptInfo(object):
 
@@ -31,6 +33,13 @@ class ReceiptInfo(object):
     def __init__(self, img_path):
         self.img_path = img_path
 
+        # CNN用の画像サイズを指定
+        self.image_size_w = 128
+        self.image_size_h = 128
+
+        # numpy array形式の画像データ
+        self.img_array = self.__imagePreprocessing(self.img_path)
+
         # 使用するツール（Tesseract）と言語（日本語）を指定
         self.tool = pyocr.get_available_tools()[0]
         self.lang = self.tool.get_available_languages()[1] # mita envでは[2]
@@ -50,6 +59,9 @@ class ReceiptInfo(object):
                           '群馬県', '宮崎県', '秋田県', '青森県','山形県', '佐賀県',
                           '山梨県', '徳島県', '高知県', '島根県', '鳥取県']
 
+        # 店舗種別のリスト
+        self.cn_name = ['ファミリマート', 'ファミマ!!', 'サンクス', 'サークルK']
+
     # 画像データからテキストデータを取得
     def __getTextFromImage(self, img_path):
         text = self.tool.image_to_string(Image.open(img_path),
@@ -62,6 +74,13 @@ class ReceiptInfo(object):
                                    lang=self.lang_en,
                                    builder=pyocr.builders.TextBuilder())
         return text
+
+    # CNN用の画像前処理
+    def __imagePreprocessing(self, filepath):
+        img = cv2.imread(filepath)
+        img = cv2.resize(img, (self.image_size_w, self.image_size_h)) #画像をリサイズ
+        img = img.astype(float) / 255
+        return img.reshape(1, img.shape[0], img.shape[1], img.shape[2])
 
     # テキストデータを整形の上、１行ごとに分けてリスト化して返します。
     def text_cleaner(self, text):
@@ -105,6 +124,10 @@ class ReceiptInfo(object):
                     phone_number = ''.join(phone_number)
                     if len(phone_number) >=8:
                         return l[-16:]
+                    else:
+                        return np.nan #elseでnanを返すように変えておきました
+                else:
+                    return np.nan
 
     def gross_amount_check(self, list):
         cnt = 0
@@ -124,11 +147,18 @@ class ReceiptInfo(object):
 
     # レシート種別
     def get_cn_name(self):
+
         """
         "ファミマ!!"、"ファミリマート"、"サークルK"、"サンクス"のいずれか
         """
-        # TODO
-        return "ファミリマート"
+
+        # 別途推定したモデルをロード
+        model = load_model('./cn_name/CNN_cn_name.h5')
+
+        # モデルの推定値を求める
+        predict = model.predict_classes(self.img_array)[0]
+
+        return self.cn_name[predict]
 
     # 店舗住所（都道府県）
     def get_store_pref(self):
@@ -229,7 +259,7 @@ if __name__ == '__main__':
 #    path = 'zswdmg51_000.jpg' これでテストしたけど日本語のほうがうまく電話番号抜けました
 #    receipt = ReceiptInfo(path)
 
-    pict_name_list = os.listdir('./rotateimage')
+    pict_name_list = os.listdir('./train2')
     for pict_name in sorted(pict_name_list):
         if pict_name.find(".jpg") > -1 and pict_name.find('_270') > -1:
             path = './rotateimage/' + pict_name
@@ -241,7 +271,7 @@ if __name__ == '__main__':
             print('total_price: ' + str(receipt.get_total_price()))
             print('regi_number: ' + receipt.get_regi_number())
             print('duty_number: ' + receipt.get_duty_number())
-            print('card_number: ' + receipt.get_card_number())
+            print('card_number: ' + str(receipt.get_card_number()))
             print('num_items: ' + str(receipt.get_num_items()))
             print('items: ' + str(receipt.get_items()))
         else:

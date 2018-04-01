@@ -154,8 +154,8 @@ class MakeTestDataSet(MakeDataSetBase):
 
 if __name__ == '__main__':
     ROOT_DIR = "./rotateimage_test"
-    IMAGE_SIZE_W = 256
-    IMAGE_SIZE_H = 256
+    IMAGE_SIZE_W = 128
+    IMAGE_SIZE_H = 128
 
 #    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
 #    datasets = md.getDataSet()

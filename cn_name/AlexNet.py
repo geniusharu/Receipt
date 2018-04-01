@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
+from sklearn import cross_validation
 from keras.initializers import TruncatedNormal, Constant
 from keras.models import Sequential
 from keras.optimizers import SGD
@@ -7,19 +9,19 @@ from keras.layers import Input, Dropout, Flatten, Conv2D, MaxPooling2D, Dense, A
 from keras.callbacks import Callback, EarlyStopping
 from keras.utils.np_utils import to_categorical
 
-from makedata import MakeMultiDataSets
+from makedata import MakeMultiDataSets, MakeSingleDataSet
 
 """
 AlexNetを使い、画像データから店舗種別を判別する。
 """
 
-ROOT_DIR = "./rotateimage"
+ROOT_DIR = "./rotateimage_cn_name"
 #ROOT_DIR = "./train2"
 CATEGORIES = ['ファミリマート', 'ファミマ!!', 'サンクス', 'サークルK']
 CATEGORIES_DICT = {'ファミリマート':0, 'ファミマ!!':1, 'サンクス':2, 'サークルK':3}
 NB_CLASSES = len(CATEGORIES)
-IMAGE_SIZE_W = 64
-IMAGE_SIZE_H = 64
+IMAGE_SIZE_W = 128
+IMAGE_SIZE_H = 128
 
 # 拾い物
 def conv2d(filters, kernel_size, strides=1, bias_init=1, **kwargs):
@@ -82,33 +84,62 @@ def AlexNet():
 
 def main():
 #    md = MakeMultiDataSets(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H, 10, isSaveData=True)
-#    datasets = md.getDataSet()
-    for i in range(10):
-        X = np.load("./cn_name/dataX" + str(i) + ".npy")
-        Y = np.load("./cn_name/dataY" + str(i) + ".npy")
+#    md = MakeSingleDataSet(ROOT_DIR, IMAGE_SIZE_W, IMAGE_SIZE_H)
+#    X, Y = md.getDataSet()
+    X = np.load('./cn_name/dataX_cn_name.npy')
+    Y = np.load('./cn_name/dataY_cn_name.npy')
+#    trX, valX, trY, valY = cross_validation.train_test_split(X, Y, test_size = 0.3)
+#    for i in range(10):
+#        X = np.load("./cn_name/dataX" + str(i) + ".npy")
+#        Y = np.load("./cn_name/dataY" + str(i) + ".npy")
 #    for i, d in enumerate(datasets):
-#        X, Y = d
-        X = np.array(X)
-        Y = to_categorical(Y, NB_CLASSES)
 
-        model = AlexNet()
+#    trX = np.array(trX)
+#    trY = to_categorical(trY, NB_CLASSES)
 
-        # モデルのコンパイル
-        model.compile(optimizer=SGD(lr=0.01),
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
+#    valX = np.array(valX)
+#    valY = to_categorical(valY, NB_CLASSES)
 
-        # モデルの推定
-        history = model.fit(X, Y,
-                            nb_epoch=10,
-                            verbose=1)
+    X = np.array(X)
+    Y = to_categorical(Y, NB_CLASSES)
 
-        # save model
-        model.save('./cn_name/CNN_' + str(i) + '.h5')
+    model = AlexNet()
 
-        del model #メモリからmodelを消去
-        del X
-        del Y
+    # モデルのコンパイル
+    model.compile(optimizer=SGD(lr=0.01),
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    # モデルの推定
+    history = model.fit(X, Y,
+                        nb_epoch=50,
+                        verbose=1)#,
+#                        validation_data=(valX, valY))
+
+    # save model
+    model.save('./cn_name/CNN_cn_name.h5')
+
+    # summarize history for accuracy
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+#        del model #メモリからmodelを消去
+#        del X
+#        del Y
 
 if __name__ == '__main__':
     main()
