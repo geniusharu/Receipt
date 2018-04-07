@@ -39,8 +39,11 @@ class ReceiptInfo(object):
         self.image_size_w = 128
         self.image_size_h = 128
 
-        # numpy array形式の画像データ
-        self.img_array = self.__imagePreprocessing(self.img_path)
+        # numpy array形式の画像データ（CNNモデル用）
+        self.img_array_000 = self.__imagePreprocessing(self.img_path_000)
+        self.img_array_090 = self.__imagePreprocessing(self.img_path_090)
+        self.img_array_180 = self.__imagePreprocessing(self.img_path_180)
+        self.img_array_270 = self.__imagePreprocessing(self.img_path_270)
 
         # 使用するツール（Tesseract）と言語（日本語）を指定
         self.tool = pyocr.get_available_tools()[0]
@@ -176,10 +179,20 @@ class ReceiptInfo(object):
         # 別途推定したモデルをロード
         model = load_model('./cn_name/CNN_cn_name.h5')
 
-        # モデルの推定値を求める
-        predict = model.predict_classes(self.img_array)[0]
+        # 各画像ごとに各クラスに分類される確率を算出
+        predict_000 = model.predict_proba(self.img_array_000)
+        predict_090 = model.predict_proba(self.img_array_090)
+        predict_180 = model.predict_proba(self.img_array_180)
+        predict_270 = model.predict_proba(self.img_array_270)
+        probas = [predict_000, predict_090, predict_180, predict_270]
 
-        return self.cn_name[predict]
+        # 各画像の平均確率を算出
+        average_proba = np.average(probas, axis=0)
+
+        # 確率が最大となるクラスを選択
+        predict_class = average_proba.argmax(axis=-1)[0]
+
+        return self.cn_name[predict_class]
 
     # 店舗住所（都道府県）
     def get_store_pref(self):
@@ -269,10 +282,20 @@ class ReceiptInfo(object):
         # 別途推定したモデルをロード
         model = load_model('./num_items/CNN_num_items.h5')
 
-        # モデルの推定値を求める
-        predict = model.predict_classes(self.img_array)[0]
+        # 各画像ごとに各クラスに分類される確率を算出
+        predict_000 = model.predict_proba(self.img_array_000)
+        predict_090 = model.predict_proba(self.img_array_090)
+        predict_180 = model.predict_proba(self.img_array_180)
+        predict_270 = model.predict_proba(self.img_array_270)
+        probas = [predict_000, predict_090, predict_180, predict_270]
 
-        return self.num_items[predict]
+        # 各画像の平均確率を算出
+        average_proba = np.average(probas, axis=0)
+
+        # 確率が最大となるクラスを選択
+        predict_class = average_proba.argmax(axis=-1)[0]
+
+        return self.num_items[predict_class]
 
     # 購入した商品情報（キャンペーン対象のみ）
     def get_items(self):
