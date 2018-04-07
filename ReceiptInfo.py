@@ -188,7 +188,7 @@ class ReceiptInfo(object):
         "東京都"、"神奈川県"、等
         """
 
-        store_pref = np.nan # 初期値はnanにしておく
+        store_pref = '' # 初期値は空白にしておく
 
         # テキスト内に都道府県名の文字列があればそれを返す
         for pref in self.pref_list:
@@ -197,10 +197,10 @@ class ReceiptInfo(object):
                 break
 
         # nanの場合は"東京都"を返す
-        if np.isnan(store_pref):
-            return '東京都'
-        else:
+        if store_pref:
             return store_pref
+        else:
+            return '東京都'
 
     # 店舗電話番号
     def get_store_tel(self):
@@ -290,7 +290,7 @@ class ReceiptInfo(object):
                 __price = self.item_list[self.item_list.name==item_name]['price'].iloc[0] #当該商品の価格を抽出
                 __discount = 0 # とりあえず全て値引きは0円に固定
                 __num_items = 1 # とりあえず個数は1個に固定
-                item = (item_name, price, )
+                item = (item_name, __price, __discount, __num_items)
                 items.append(item)
 
         # itemsが空の場合はnoneを返す
@@ -301,8 +301,8 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    img_path = './test2/a0sr435n.jpg'
-    rotate_folder = './rotateimage_test/'
+    img_path = './train/p07h2j1f.jpg'
+    rotate_folder = './rotateimage/'
 
     receipt = receipt = ReceiptInfo(img_path, rotate_folder)
 
