@@ -88,20 +88,20 @@ def main():
 #    X, Y = md.getDataSet()
     X = np.load('./num_items/dataX_num_items.npy')
     Y = np.load('./num_items/dataY_num_items.npy')
-    trX, valX, trY, valY = cross_validation.train_test_split(X, Y, test_size = 0.3)
+#    trX, valX, trY, valY = cross_validation.train_test_split(X, Y, test_size = 0.3)
 #    for i in range(10):
 #        X = np.load("./cn_name/dataX" + str(i) + ".npy")
 #        Y = np.load("./cn_name/dataY" + str(i) + ".npy")
 #    for i, d in enumerate(datasets):
 
-    trX = np.array(trX)
-    trY = to_categorical(trY, NB_CLASSES)
+#    trX = np.array(trX)
+#    trY = to_categorical(trY, NB_CLASSES)
 
-    valX = np.array(valX)
-    valY = to_categorical(valY, NB_CLASSES)
+#    valX = np.array(valX)
+#    valY = to_categorical(valY, NB_CLASSES)
 
-#    X = np.array(X)
-#    Y = to_categorical(Y, NB_CLASSES)
+    X = np.array(X)
+    Y = to_categorical(Y, NB_CLASSES)
 
     model = AlexNet()
 
@@ -111,10 +111,10 @@ def main():
                   metrics=['accuracy'])
 
     # モデルの推定
-    history = model.fit(trX, trY,
-                        nb_epoch=50,
-                        verbose=1,
-                        validation_data=(valX, valY))
+    history = model.fit(X, Y,
+                        nb_epoch=20,
+                        verbose=1)#,
+#                        validation_data=(valX, valY))
 
     # save model
     model.save('./num_items/CNN_num_items.h5')

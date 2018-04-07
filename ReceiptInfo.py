@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import pandas as pd
 import pyocr
 import pyocr.builders
 
@@ -14,8 +15,8 @@ class ReceiptInfo(object):
     レシートの属性情報を取得するためのクラス
 
     input:
-        img_path: 画像のパス
-
+        img_path: 元画像のパス（回転・トリミング前のもの）
+        rotate_folder: 回転させた画像を保存しているフォルダ
     output:
         cn_name :レシート種別
         store_pref :店舗住所（都道府県）
@@ -30,8 +31,9 @@ class ReceiptInfo(object):
 
     """
 
-    def __init__(self, img_path):
-        self.img_path = img_path
+    def __init__(self, img_path, rotate_folder):
+        self.rotate_folder = rotate_folder
+        self.img_path = self.__getRotateImage(img_path)
 
         # CNN用の画像サイズを指定
         self.image_size_w = 128
@@ -65,6 +67,25 @@ class ReceiptInfo(object):
         # 購入した商品の種類数のリスト
         self.num_items = [1,2,3,4]
 
+        # キャンペーン対象商品のリスト
+        self.item_list = pd.read_csv('item_list.csv')
+
+    # 回転・トリミング後の画像パスを取得
+    def __getRotateImage(self, img_path):
+        __img = Image.open(img_path) #元画像を開く
+        __img_array = np.asarray(__img) # numpy array形式に変換
+
+        # 回転・トリミング後の画像パス
+        self.img_path_000 = self.rotate_folder + img_path[-12:][:8] +"_000.jpg"
+        self.img_path_090 = self.rotate_folder + img_path[-12:][:8] +"_090.jpg"
+        self.img_path_180 = self.rotate_folder + img_path[-12:][:8] +"_180.jpg"
+        self.img_path_270 = self.rotate_folder + img_path[-12:][:8] +"_270.jpg"
+
+        # 縦幅<横幅なら270度回転させた画像、それ以外は回転させていない画像のパスを返す
+        if __img_array.shape[0] < __img_array.shape[1]:
+            return self.img_path_270
+        else:
+            return self.img_path_000
 
     # 画像データからテキストデータを取得
     def __getTextFromImage(self, img_path):
@@ -103,7 +124,7 @@ class ReceiptInfo(object):
         return res
 
     # Kuso-codeをfixして高速化
-    def phone_number_check(self, list):しょうひんすうｒ
+    def phone_number_check(self, list):
         for l in list[:10]:
             phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
             phone_number = ''.join(phone_number)
@@ -175,7 +196,11 @@ class ReceiptInfo(object):
                 store_pref = pref
                 break
 
-        return store_pref
+        # nanの場合は"東京都"を返す
+        if np.isnan(store_pref):
+            return '東京都'
+        else:
+            return store_pref
 
     # 店舗電話番号
     def get_store_tel(self):
@@ -201,7 +226,6 @@ class ReceiptInfo(object):
         """
         整数値
         """
-        # TODO
         text_jp = self.text
         text_jp = self.text_cleaner(text_jp)
         gross_amount = self.gross_amount_check(text_jp)
@@ -228,7 +252,6 @@ class ReceiptInfo(object):
         """
         iiii********iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
-        # TODO
         text_jp = self.text
         text_jp = self.text_cleaner(text_jp)
         text_en = self.text_en
@@ -253,19 +276,48 @@ class ReceiptInfo(object):
 
     # 購入した商品情報（キャンペーン対象のみ）
     def get_items(self):
+
         """
         [(商品名_1,単価_1,値引き_1,個数_1),...,(商品名_n,単価_n,値引き_n,個数_n)]
         ※存在しない場合は"none"とする。単価と個数は整数値、値引き値は-を付け、ない場合は0とする。
         """
-        # TODO
-        return [('手巻シーチキンマヨネー',110,0,1)]
+
+        items = []
+
+        # テキスト内にitem listと一致する文字列があれば商品情報を追加。
+        for item_name in self.item_list['name']:
+            if item_name in self.text:
+                __price = self.item_list[self.item_list.name==item_name]['price'].iloc[0] #当該商品の価格を抽出
+                __discount = 0 # とりあえず全て値引きは0円に固定
+                __num_items = 1 # とりあえず個数は1個に固定
+                item = (item_name, price, )
+                items.append(item)
+
+        # itemsが空の場合はnoneを返す
+        if items:
+            return items
+        else:
+            return None
 
 if __name__ == '__main__':
     # test
-#    path = 'rotateimage/a01e2wt2_270.jpg'
-#    path = 'zswdmg51_000.jpg' これでテストしたけど日本語のほうがうまく電話番号抜けました
-#    receipt = ReceiptInfo(path)
+    img_path = './test2/a0sr435n.jpg'
+    rotate_folder = './rotateimage_test/'
 
+    receipt = receipt = ReceiptInfo(img_path, rotate_folder)
+
+    print('cn_name: ' + receipt.get_cn_name())
+    print('store_pref: ' + str(receipt.get_store_pref()))
+    print('store_tel: ' + str(receipt.get_store_tel()))
+    print('bought_datetime: ' + receipt.get_bought_datetime())
+    print('total_price: ' + str(receipt.get_total_price()))
+    print('regi_number: ' + receipt.get_regi_number())
+    print('duty_number: ' + receipt.get_duty_number())
+    print('card_number: ' + str(receipt.get_card_number()))
+    print('num_items: ' + str(receipt.get_num_items()))
+    print('items: ' + str(receipt.get_items()))
+
+"""
     pict_name_list = os.listdir('./train2')
     for pict_name in sorted(pict_name_list):
         if pict_name.find(".jpg") > -1 and pict_name.find('_270') > -1:
@@ -283,3 +335,4 @@ if __name__ == '__main__':
             print('items: ' + str(receipt.get_items()))
         else:
             pass
+"""
