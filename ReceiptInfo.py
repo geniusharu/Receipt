@@ -62,6 +62,10 @@ class ReceiptInfo(object):
         # 店舗種別のリスト
         self.cn_name = ['ファミリマート', 'ファミマ!!', 'サンクス', 'サークルK']
 
+        # 購入した商品の種類数のリスト
+        self.num_items = [1,2,3,4]
+
+
     # 画像データからテキストデータを取得
     def __getTextFromImage(self, img_path):
         text = self.tool.image_to_string(Image.open(img_path),
@@ -99,7 +103,7 @@ class ReceiptInfo(object):
         return res
 
     # Kuso-codeをfixして高速化
-    def phone_number_check(self, list):
+    def phone_number_check(self, list):しょうひんすうｒ
         for l in list[:10]:
             phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
             phone_number = ''.join(phone_number)
@@ -124,10 +128,6 @@ class ReceiptInfo(object):
                     phone_number = ''.join(phone_number)
                     if len(phone_number) >=8:
                         return l[-16:]
-                    else:
-                        return np.nan #elseでnanを返すように変えておきました
-                else:
-                    return np.nan
 
     def gross_amount_check(self, list):
         cnt = 0
@@ -238,11 +238,18 @@ class ReceiptInfo(object):
 
     # 購入した商品の種類数
     def get_num_items(self):
+
         """
         整数値
         """
-        # TODO
-        return 1
+
+        # 別途推定したモデルをロード
+        model = load_model('./num_items/CNN_num_items.h5')
+
+        # モデルの推定値を求める
+        predict = model.predict_classes(self.img_array)[0]
+
+        return self.num_items[predict]
 
     # 購入した商品情報（キャンペーン対象のみ）
     def get_items(self):
