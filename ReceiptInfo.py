@@ -9,6 +9,10 @@ from datetime import datetime
 from keras.models import load_model
 from PIL import Image
 
+# 別途推定したCNNモデルをロード
+CNN_MODEL_CN_NAME = load_model('./cn_name/CNN_cn_name.h5')
+CNN_MODEL_NUM_ITEMS = load_model('./num_items/CNN_num_items.h5')
+
 class ReceiptInfo(object):
 
     """
@@ -176,14 +180,11 @@ class ReceiptInfo(object):
         "ファミマ!!"、"ファミリマート"、"サークルK"、"サンクス"のいずれか
         """
 
-        # 別途推定したモデルをロード
-        model = load_model('./cn_name/CNN_cn_name.h5')
-
         # 各画像ごとに各クラスに分類される確率を算出
-        predict_000 = model.predict_proba(self.img_array_000)
-        predict_090 = model.predict_proba(self.img_array_090)
-        predict_180 = model.predict_proba(self.img_array_180)
-        predict_270 = model.predict_proba(self.img_array_270)
+        predict_000 = CNN_MODEL_CN_NAME.predict_proba(self.img_array_000)
+        predict_090 = CNN_MODEL_CN_NAME.predict_proba(self.img_array_090)
+        predict_180 = CNN_MODEL_CN_NAME.predict_proba(self.img_array_180)
+        predict_270 = CNN_MODEL_CN_NAME.predict_proba(self.img_array_270)
         probas = [predict_000, predict_090, predict_180, predict_270]
 
         # 各画像の平均確率を算出
@@ -279,14 +280,11 @@ class ReceiptInfo(object):
         整数値
         """
 
-        # 別途推定したモデルをロード
-        model = load_model('./num_items/CNN_num_items.h5')
-
         # 各画像ごとに各クラスに分類される確率を算出
-        predict_000 = model.predict_proba(self.img_array_000)
-        predict_090 = model.predict_proba(self.img_array_090)
-        predict_180 = model.predict_proba(self.img_array_180)
-        predict_270 = model.predict_proba(self.img_array_270)
+        predict_000 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_000)
+        predict_090 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_090)
+        predict_180 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_180)
+        predict_270 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_270)
         probas = [predict_000, predict_090, predict_180, predict_270]
 
         # 各画像の平均確率を算出
