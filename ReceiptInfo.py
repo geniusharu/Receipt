@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import pyocr
 import pyocr.builders
+import re
 
 from datetime import datetime
 from keras.models import load_model
@@ -228,12 +229,36 @@ class ReceiptInfo(object):
 
     # 商品購入年月日時
     def get_bought_datetime(self):
+
         """
         yyyy-mm-dd hh:mm:ss
         """
-        # TODO
-        d = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
-        return d.strftime("%Y-%m-%d %H:%M:%S")
+
+        d = '' #初期値は空白にしておく
+
+        # 整形後のテキストデータを取得
+        txt = self.text.split('\n')
+
+        # テキスト内で"年月日:"が含まれる行を探索
+        for t in txt:
+            if '年' in t and '月' in t and '日' in t and ':' in t:
+                _t = re.split('[年月日:]', t) # 年月日:でsplitしたリストを生成
+                year = int(_t[0][-4:].strip())
+                month = int(_t[1][-2:].strip())
+                day = int(_t[2][-2:].strip())
+                hour = int(_t[3][-2:].strip())
+                minute = int(_t[4][:2].strip())
+                d = datetime(year, month, day, hour=hour, minute=minute)
+
+        # dがNoneでなければそのまま返す
+        if d:
+            bought_datetime = d
+        else:
+            # TODO
+            # 年月日の文字列が読み込めない場合に数値から日付を推定するロジックがあると良いかもです
+            bought_datetime = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
+
+        return bought_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     # 合計金額
     def get_total_price(self):
@@ -324,8 +349,8 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    img_path = './train/p07h2j1f.jpg'
-    rotate_folder = './rotateimage/'
+    img_path = './test/a0fcjn68.jpg'
+    rotate_folder = './rotateimage_test/'
 
     receipt = receipt = ReceiptInfo(img_path, rotate_folder)
 
