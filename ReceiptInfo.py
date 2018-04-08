@@ -250,13 +250,19 @@ class ReceiptInfo(object):
         # テキスト内で"年月日:"が含まれる行を探索
         for t in txt:
             if '年' in t and '月' in t and '日' in t and ':' in t:
-                _t = re.split('[年月日:]', t) # 年月日:でsplitしたリストを生成
-                year = int(_t[0][-4:].strip())
-                month = int(_t[1][-2:].strip())
-                day = int(_t[2][-2:].strip())
-                hour = int(_t[3][-2:].strip())
-                minute = int(_t[4][:2].strip())
-                d = datetime(year, month, day, hour=hour, minute=minute)
+                try:
+                    _t = re.split('[年月日:]', t) # 年月日:でsplitしたリストを生成
+                    year = int(_t[0][-4:].strip())
+                    month = int(_t[1][-2:].strip())
+                    day = int(_t[2][-2:].strip())
+                    hour = int(_t[3][-2:].strip())
+                    minute = int(_t[4][:2].strip())
+                    d = datetime(year, month, day, hour=hour, minute=minute)
+                    break
+                except ValueError:
+                    continue
+                except IndexError:
+                    continue
 
         # dがNoneでなければそのまま返す
         if d:
@@ -294,12 +300,32 @@ class ReceiptInfo(object):
 
     # 責任番号
     def get_duty_number(self):
+
         """
         iii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
-        # TODO
-        duty_number = '001' #これが最頻値っぽいです
-        return duty_number
+
+        duty_number = '' #初期値は空白にしておく
+
+        # 整形後のテキストデータを取得
+        txt = self.text.split('\n')
+
+        # テキスト内で"No"が含まれる行を探索
+        for t in txt:
+            if 'No' in t:
+                try:
+                    duty_number = t.split('No')[1]
+                    duty_number = ''.join([_l if _l.isdigit() else '' for _l in duty_number]) #数値のみを抽出
+                    break
+                except ValueError:
+                    continue
+                except IndexError:
+                    continue
+
+        if duty_number:
+            return duty_number
+        else:
+            return 'none'
 
     # T-ポイントカード番号
     def get_card_number(self):
@@ -365,7 +391,7 @@ if __name__ == '__main__':
     img_path = './test/a0fcjn68.jpg'
     rotate_folder = './rotateimage_test/'
 
-    receipt = receipt = ReceiptInfo(img_path, rotate_folder)
+    receipt = ReceiptInfo(img_path, rotate_folder)
 
     print('cn_name: ' + receipt.get_cn_name())
     print('store_pref: ' + str(receipt.get_store_pref()))
