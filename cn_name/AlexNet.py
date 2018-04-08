@@ -88,17 +88,17 @@ def main():
 #    X, Y = md.getDataSet()
     X = np.load('./cn_name/dataX_cn_name.npy')
     Y = np.load('./cn_name/dataY_cn_name.npy')
-#    trX, valX, trY, valY = cross_validation.train_test_split(X, Y, test_size = 0.3)
+    trX, valX, trY, valY = cross_validation.train_test_split(X, Y, test_size = 0.5)
 #    for i in range(10):
 #        X = np.load("./cn_name/dataX" + str(i) + ".npy")
 #        Y = np.load("./cn_name/dataY" + str(i) + ".npy")
 #    for i, d in enumerate(datasets):
 
-#    trX = np.array(trX)
-#    trY = to_categorical(trY, NB_CLASSES)
+    trX = np.array(trX)
+    trY = to_categorical(trY, NB_CLASSES)
 
-#    valX = np.array(valX)
-#    valY = to_categorical(valY, NB_CLASSES)
+    valX = np.array(valX)
+    valY = to_categorical(valY, NB_CLASSES)
 
     X = np.array(X)
     Y = to_categorical(Y, NB_CLASSES)
@@ -110,11 +110,15 @@ def main():
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
+    # Early Stoppingの設定
+    early_stopping = EarlyStopping(monitor='val_acc', patience=10, verbose=1, mode='auto')
+
     # モデルの推定
     history = model.fit(X, Y,
-                        nb_epoch=50,
-                        verbose=1)#,
-#                        validation_data=(valX, valY))
+                        nb_epoch=500,
+                        verbose=1,
+                        validation_data=(valX, valY),
+                        callbacks=[early_stopping])
 
     # save model
     model.save('./cn_name/CNN_cn_name.h5')

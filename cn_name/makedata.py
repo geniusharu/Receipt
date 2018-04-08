@@ -59,19 +59,19 @@ class MakeSingleDataSet(MakeDataSetBase):
         Y=[]
         X=[]
         for fp, fn in tqdm(zip(self.filepaths, self.filenames)):
-#            try:
-            y = self.getLabel(fn)
-            x = self.imagePreprocessing(fp)
-            Y.append(y)
-            X.append(x)
+            try:
+                y = self.getLabel(fn)
+                x = self.imagePreprocessing(fp)
+                Y.append(y)
+                X.append(x)
 #            except OSError:
 #                continue
 #            except IndexError:
 #                continue
 #            except AttributeError:
 #                continue
-#            except cv2.error:
-#                continue
+            except cv2.error:
+                continue
         X = np.array(X)
         Y = np.array(Y)
         np.save("./cn_name/dataX_cn_name.npy", X) #分割したデータを保存
