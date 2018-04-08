@@ -192,6 +192,10 @@ class ReceiptInfo(object):
             regi = [l if l.isdigit() else '' for l in  list[cnt] ]
             tmp = ''.join(regi)
             my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:])
+            if my_result:
+                return my_result
+            else:
+                'none'
 
     # レシート種別
     def get_cn_name(self):
