@@ -173,6 +173,14 @@ class ReceiptInfo(object):
         except: # わからないときは663円（最頻値）と予想
             my_result = 663
         return my_result
+    
+    def regi_number(self, list):
+        for line in list:
+            if line.find('レシ')>-1 or line.find('レジ')>-1:
+                regi = [l if l.isdigit() else '' for l in line]
+                tmp = ''.join(regi)
+                my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:]) 
+                return my_result
 
     # レシート種別
     def get_cn_name(self):
@@ -276,7 +284,12 @@ class ReceiptInfo(object):
         i-iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
         #TODO
-        regi_number = '1-0490' #これが最頻値っぽいです
+        text = self.text
+        text = self.text_cleaner(text)
+        try:
+            regi_number = self.regi_number(text)
+        except:
+            regi_number = '1-0490' #これが最頻値っぽいです
         return regi_number
 
     # 責任番号
