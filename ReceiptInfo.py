@@ -175,12 +175,23 @@ class ReceiptInfo(object):
         return my_result
     
     def regi_number(self, list):
+        cnt = 0
+        my_result = ''
         for line in list:
             if line.find('レシ')>-1 or line.find('レジ')>-1:
                 regi = [l if l.isdigit() else '' for l in line]
                 tmp = ''.join(regi)
                 my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:]) 
-                return my_result
+        if my_result:
+            return my_result
+        else:
+            for line in list:
+                if line.find('N')>-1:
+                    break
+                cnt = cnt + 1
+            regi = [l if l.isdigit() else '' for l in  list[cnt] ]
+            tmp = ''.join(regi)
+            my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:])
 
     # レシート種別
     def get_cn_name(self):
