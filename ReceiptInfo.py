@@ -169,7 +169,7 @@ class ReceiptInfo(object):
             tgt_row = tgt_row.replace('フ','7')
             tgt_row = tgt_row.replace('了','7')
             my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
-        except: # わからないときは108円と予想
+        except: # わからないときは663円（最頻値）と予想
             my_result = 663
         return my_result
 
@@ -232,7 +232,7 @@ class ReceiptInfo(object):
         yyyy-mm-dd hh:mm:ss
         """
         # TODO
-        d = datetime.now() # とりあえず現在時刻を返すようにしてます
+        d = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
         return d.strftime("%Y-%m-%d %H:%M:%S")
 
     # 合計金額
@@ -251,7 +251,8 @@ class ReceiptInfo(object):
         i-iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
         #TODO
-        return "1-2345"
+        regi_number = '1-0490' #これが最頻値っぽいです
+        return regi_number
 
     # 責任番号
     def get_duty_number(self):
@@ -259,7 +260,8 @@ class ReceiptInfo(object):
         iii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
         # TODO
-        return "123"
+        duty_number = '001' #これが最頻値っぽいです
+        return duty_number
 
     # T-ポイントカード番号
     def get_card_number(self):

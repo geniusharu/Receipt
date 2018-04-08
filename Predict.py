@@ -94,5 +94,5 @@ if __name__ == '__main__':
         except KeyError:
             submit.append(np.nan)
 
-    submit = pd.Series(submit)
+    submit = pd.Series(submit).fillna('none')
     submit.to_csv(output, sep='\t', header=False, index=True)
