@@ -125,38 +125,10 @@ class ReceiptInfo(object):
         return result
 
     # text_cleanerのアウトプット（リスト）から、ファミマ文字列があるか確認し、あればTrueを、なければFalseを返します。
-    # 多分これで同じ結果になると思います。
     def check_picture(self, list):
         moji = ' '.join(list[:5]) # listの最初の5要素を結合して文字列を生成
         res =  "Fam" in moji or "ami" in moji or "art" in moji
         return res
-
-    # Kuso-codeをfixして高速化
-    def phone_number_check(self, list):
-        for l in list[:10]:
-            phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-            phone_number = ''.join(phone_number)
-            if len(phone_number) >=10:
-                return phone_number[:11]
-
-    def card_number_check(self, list_jp, list_en):
-        for l in list_jp:
-            if l.find('********') > -1:
-                phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-                phone_number = ''.join(phone_number)
-                if len(phone_number) >=8:
-                    my_result = l[-16:]
-        # my_resultが入ってればそれを返して、入っていなければ英語版を読みに行く
-        try:
-            my_result
-            return my_result
-        except:
-            for l in list_en:
-                if l.find('********') > -1:
-                    phone_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-                    phone_number = ''.join(phone_number)
-                    if len(phone_number) >=8:
-                        return l[-16:]
 
     def gross_amount_check(self, list):
         cnt = 0
@@ -173,7 +145,7 @@ class ReceiptInfo(object):
         except: # わからないときは663円（最頻値）と予想
             my_result = 663
         return my_result
-    
+
     def regi_number(self, list):
         cnt = 0
         my_result = ''
@@ -181,7 +153,8 @@ class ReceiptInfo(object):
             if line.find('レシ')>-1 or line.find('レジ')>-1:
                 regi = [l if l.isdigit() else '' for l in line]
                 tmp = ''.join(regi)
-                my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:]) 
+                if len(tmp) >= 5:
+                    my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
         if my_result:
             return my_result
         else:
@@ -191,7 +164,9 @@ class ReceiptInfo(object):
                 cnt = cnt + 1
             regi = [l if l.isdigit() else '' for l in  list[cnt] ]
             tmp = ''.join(regi)
-            my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:])
+            if len(tmp) >= 5:
+                my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
+
             if my_result:
                 return my_result
             else:
@@ -242,13 +217,27 @@ class ReceiptInfo(object):
 
     # 店舗電話番号
     def get_store_tel(self):
+
         """
         ハイフン"-"なしの10桁の数字
         """
-        text = self.text_en  # language は英語を使用
-        text = self.text_cleaner(text)
-        store_tel = self.phone_number_check(text)
-        return store_tel
+
+        txt = self.text.split('\n') # '話'で抜けそうな感じだったので日本語使用に変更しています。
+
+        store_tel = '' # 初期値は空白に
+
+        for l in txt:
+            # "話"だけ抜けてる場合が多いのでこれで判別します。
+            if '話' in l:
+                _store_tel = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+                _store_tel = ''.join(_store_tel)
+                if len(_store_tel) >=10:
+                    store_tel = _store_tel[:11]
+
+        if store_tel:
+            return store_tel
+        else:
+            return 'none'
 
     # 商品購入年月日時
     def get_bought_datetime(self):
@@ -264,20 +253,41 @@ class ReceiptInfo(object):
 
         # テキスト内で"年月日:"が含まれる行を探索
         for t in txt:
-            if '年' in t and '月' in t and '日' in t and ':' in t:
-                try:
-                    _t = re.split('[年月日:]', t) # 年月日:でsplitしたリストを生成
-                    year = int(_t[0][-4:].strip())
-                    month = int(_t[1][-2:].strip())
-                    day = int(_t[2][-2:].strip())
-                    hour = int(_t[3][-2:].strip())
-                    minute = int(_t[4][:2].strip())
-                    d = datetime(year, month, day, hour=hour, minute=minute)
-                    break
-                except ValueError:
-                    continue
-                except IndexError:
-                    continue
+            try:
+                # ファミリーマートタイプを想定
+                if '年' in t and '月' in t and '日' in t and ':' in t:
+                        _t = re.split('[年月日:]', t) # 年月日:でsplitしたリストを生成
+
+                        year = int(_t[0][-4:].strip())
+                        month = int(_t[1][-2:].strip())
+                        day = int(_t[2][-2:].strip())
+                        hour = int(_t[-2][-2:].strip())
+                        minute = int(_t[-1][:2].strip())
+
+                        if len(str(year)) != 4:
+                            year = 2017 #うまく読み込めてない場合は2017に変更
+
+                        d = datetime(year, month, day, hour=hour, minute=minute)
+                        break
+                # サークルＫタイプを想定
+                elif '年' in t and '月' in t and '日' in t and '時' in t and '分' in t:
+                        _t = re.split('[年月日時分]', t) # 年月日時分でsplitしたリストを生成
+
+                        year = int(_t[0][-4:].strip())
+                        month = int(_t[1][-2:].strip())
+                        day = int(_t[2][-2:].strip())
+                        hour = int(_t[-3][-2:].strip())
+                        minute = int(_t[-2][:2].strip())
+
+                        if len(str(year)) != 4:
+                            year = 2017 #うまく読み込めてない場合は2017に変更
+
+                        d = datetime(year, month, day, hour=hour, minute=minute)
+                        break
+            except ValueError:
+                continue
+            except IndexError:
+                continue
 
         # dがNoneでなければそのまま返す
         if d:
@@ -304,13 +314,12 @@ class ReceiptInfo(object):
         """
         i-iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
-        #TODO
         text = self.text
         text = self.text_cleaner(text)
         try:
             regi_number = self.regi_number(text)
         except:
-            regi_number = '1-0490' #これが最頻値っぽいです
+            regi_number = 'none'
         return regi_number
 
     # 責任番号
@@ -337,21 +346,48 @@ class ReceiptInfo(object):
                 except IndexError:
                     continue
 
-        if duty_number:
+        if duty_number and len(duty_number)==3: #3桁でない場合はうまく抜けてない可能性が高いのでnoneで返すように変更
             return duty_number
         else:
             return 'none'
 
     # T-ポイントカード番号
     def get_card_number(self):
+
         """
         iiii********iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
+
         text_jp = self.text
         text_jp = self.text_cleaner(text_jp)
         text_en = self.text_en
         text_en = self.text_cleaner(text_en)
-        card_number = self.card_number_check(text_jp,text_en)
+
+        card_number = '' # 初期値は空白にしておく
+
+        for l in text_jp:
+            # "********"を完璧に抜けているパターンは少ないので数を減らしています。
+            if '**' in l or '対象' in l or '会員' in l or '番号' in l:
+                _card_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+                _card_number = ''.join(_card_number)
+                if len(_card_number) >= 8:
+                    card_number = str(_card_number[:4]) + '********' + str(_card_number[-4:])
+
+        # card_numberが入ってればそれを返して、入っていなければ英語版を読みに行く
+        if card_number:
+            return card_number
+        else:
+            for l in text_en:
+                if '**' in l: # "********"を完璧に抜けているパターンは少ないので数を減らしています。
+                    _card_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
+                    _card_number = ''.join(_card_number)
+                    if len(_card_number) >= 8:
+                        card_number = str(_card_number[:4]) + '********' + str(_card_number[-4:])
+            if card_number:
+                return card_number
+            else:
+                return 'none'
+
         return card_number
 
     # 購入した商品の種類数
@@ -399,11 +435,11 @@ class ReceiptInfo(object):
         if items:
             return items
         else:
-            return None
+            return 'none'
 
 if __name__ == '__main__':
     # test
-    img_path = './test/a0fcjn68.jpg'
+    img_path = './test/a06jut8e.jpg'
     rotate_folder = './rotateimage_test/'
 
     receipt = ReceiptInfo(img_path, rotate_folder)

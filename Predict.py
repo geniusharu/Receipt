@@ -35,7 +35,7 @@ def allReceiptInfo(folder, rotate_folder):
             pict_info['card_number'] = receipt.get_card_number()
             pict_info['num_items'] = receipt.get_num_items()
             pict_info['items'] = receipt.get_items()
-            pict_info['pict_name'] = pict_name
+#            pict_info['pict_name'] = pict_name
 
             res[pict_name] = pict_info
         except OSError:
@@ -92,7 +92,15 @@ if __name__ == '__main__':
         try:
             submit.append(alldata[p][f])
         except KeyError:
-            submit.append(np.nan)
+            # 欠損値の補間を追加しました。
+            if p == 'cn_name':
+                submit.append('ファミリマート')
+            elif p == 'store_pref':
+                submit.append('東京都')
+            elif p == 'total_price':
+                submit.append('663')
+            else:
+                submit.append('none')
 
     submit = pd.Series(submit).fillna('none')
     submit.to_csv(output, sep='\t', header=False, index=True)
