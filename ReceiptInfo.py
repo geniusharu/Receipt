@@ -115,6 +115,12 @@ class ReceiptInfo(object):
         img = img.astype(float) / 255
         return img.reshape(1, img.shape[0], img.shape[1], img.shape[2])
 
+    # テキストデータに含まれる整数値のみを習得する関数
+    def __getDigit(self, text):
+        digit = [l if l.isdigit() else '' for l in text]
+        digit = ''.join(digit)
+        return digit
+
     # テキストデータを整形の上、１行ごとに分けてリスト化して返します。
     def text_cleaner(self, text):
         text = text.replace("　", "")
@@ -151,8 +157,7 @@ class ReceiptInfo(object):
         my_result = ''
         for line in list:
             if line.find('レシ')>-1 or line.find('レジ')>-1:
-                regi = [l if l.isdigit() else '' for l in line]
-                tmp = ''.join(regi)
+                tmp = self.__getDigit(line)
                 if len(tmp) >= 5:
                     my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
         if my_result:
@@ -162,8 +167,7 @@ class ReceiptInfo(object):
                 if line.find('N')>-1:
                     break
                 cnt = cnt + 1
-            regi = [l if l.isdigit() else '' for l in  list[cnt] ]
-            tmp = ''.join(regi)
+            tmp = self.__getDigit(list[cnt])
             if len(tmp) >= 5:
                 my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
 
@@ -229,10 +233,9 @@ class ReceiptInfo(object):
         for l in txt:
             # "話"だけ抜けてる場合が多いのでこれで判別します。
             if '話' in l:
-                _store_tel = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-                _store_tel = ''.join(_store_tel)
+                _store_tel = self.__getDigit(l)
                 if len(_store_tel) >=10:
-                    store_tel = _store_tel[:11]
+                    store_tel = _store_tel[-10:]
 
         if store_tel:
             return store_tel
@@ -339,7 +342,7 @@ class ReceiptInfo(object):
             if 'No' in t:
                 try:
                     duty_number = t.split('No')[1]
-                    duty_number = ''.join([_l if _l.isdigit() else '' for _l in duty_number]) #数値のみを抽出
+                    duty_number = self.__getDigit(duty_number) # 数値のみを抽出
                     break
                 except ValueError:
                     continue
@@ -367,9 +370,8 @@ class ReceiptInfo(object):
 
         for l in text_jp:
             # "********"を完璧に抜けているパターンは少ないので数を減らしています。
-            if '**' in l or '対象' in l or '会員' in l or '番号' in l:
-                _card_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-                _card_number = ''.join(_card_number)
+            if '**' in l or '対象' in l or '会員' in l or '番号' in l or 'xx' in l:
+                _card_number = self.__getDigit(l)
                 if len(_card_number) >= 8:
                     card_number = str(_card_number[:4]) + '********' + str(_card_number[-4:])
 
@@ -378,9 +380,8 @@ class ReceiptInfo(object):
             return card_number
         else:
             for l in text_en:
-                if '**' in l: # "********"を完璧に抜けているパターンは少ないので数を減らしています。
-                    _card_number = [_l if _l.isdigit() else '' for _l in l] # リスト内の整数値のみ抽出
-                    _card_number = ''.join(_card_number)
+                if '**' in l or 'xx' in l: # "********"を完璧に抜けているパターンは少ないので数を減らしています。
+                    _card_number = self.__getDigit(l)
                     if len(_card_number) >= 8:
                         card_number = str(_card_number[:4]) + '********' + str(_card_number[-4:])
             if card_number:
@@ -439,7 +440,7 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    img_path = './test/a06jut8e.jpg'
+    img_path = './test/zy1pcx5i.jpg'
     rotate_folder = './rotateimage_test/'
 
     receipt = ReceiptInfo(img_path, rotate_folder)
