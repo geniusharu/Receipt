@@ -45,36 +45,6 @@ def allReceiptInfo(folder, rotate_folder):
 
     return res
 
-# 提出用のtsvファイル生成用
-def generateSubmitFile(output,folder,valDatapath):
-    """
-    Not used
-    """
-
-    pict_names = os.listdir(folder) # 対象フォルダ内の画像ファイル名を取得
-
-    valData = pd.read_csv(valDatapath, sep='\t') # 評価用データの読み込み
-    allReceiptInfo = aggregateReceiptInfo(folder) # testフォルダ以下のレシート情報の集計
-
-    # allReceiptInfoで集計した結果から提出するものを選択
-    tmp_allReceiptInfo = {}
-    for pict_name in pict_names:
-        original_pict_name = pict_name[:-8] + ".jpg" # もとの画像名
-
-        # 画像名が一致かつstore_telがnanでないものを抽出
-        if original_pict_name == allReceiptInfo[f]['original_pict_name'] and not(np.isnan(allReceiptInfo[f]['store_tel'])):
-            tmp_allReceiptInfo[original_pict_name] = allReceiptInfo[pict_name]
-
-    submit = []
-    for f, p in tqdm(zip(valData.file_name, valData.property)):
-        for pict_name in pict_names:
-            submit.append(tmp_allReceiptInfo[f][p])
-
-    submit = pd.Series(submit)
-    submit.to_csv(output, sep='\t', header=False, index=True)
-
-    return submit
-
 if __name__ == '__main__':
     output = 'submit.tsv'
     folder = "./test/"

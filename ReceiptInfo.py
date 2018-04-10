@@ -136,46 +136,6 @@ class ReceiptInfo(object):
         res =  "Fam" in moji or "ami" in moji or "art" in moji
         return res
 
-    def gross_amount_check(self, list):
-        cnt = 0
-        # 合計と記載された行が何行目かを cnt で調べる
-        for line in list:
-            if line.find('合') > -1 and line.find('算') and line.find('商') == -1 and line.find('品') == -1 and line.find('値') == -1 and line.find('引') == -1 :
-                break
-            cnt = cnt + 1
-        try:
-            tgt_row = list[cnt]
-            tgt_row = tgt_row.replace('フ','7')
-            tgt_row = tgt_row.replace('了','7')
-            my_result = ''.join([_l if _l.isdigit() else '' for _l in tgt_row])
-        except: # わからないときは663円（最頻値）と予想
-            my_result = 663
-        return my_result
-
-    def regi_number(self, list):
-        cnt = 0
-        my_result = ''
-        for line in list:
-            if line.find('レシ')>-1 or line.find('レジ')>-1:
-                tmp = self.__getDigit(line)
-                if len(tmp) >= 5:
-                    my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
-        if my_result:
-            return my_result
-        else:
-            for line in list:
-                if line.find('N')>-1:
-                    break
-                cnt = cnt + 1
-            tmp = self.__getDigit(list[cnt])
-            if len(tmp) >= 5:
-                my_result = '{0}{1}{2}'.format(tmp[:1], '-', tmp[1:5])
-
-            if my_result:
-                return my_result
-            else:
-                'none'
-
     # レシート種別
     def get_cn_name(self):
 
@@ -209,7 +169,7 @@ class ReceiptInfo(object):
 
         # テキスト内に都道府県名の文字列があればそれを返す
         for pref in self.pref_list:
-            if pref in self.text:
+            if pref[:2] in self.text:
                 store_pref = pref
                 break
 
@@ -231,7 +191,7 @@ class ReceiptInfo(object):
         store_tel = '' # 初期値は空白に
 
         for l in txt:
-            # "話"だけ抜けてる場合が多いのでこれで判別します。
+            # "話"だけ認識できてる場合が多いのでこれで判別します。
             if '話' in l:
                 _store_tel = self.__getDigit(l)
                 if len(_store_tel) >=10:
@@ -297,33 +257,88 @@ class ReceiptInfo(object):
             bought_datetime = d
         else:
             # TODO
-            # 年月日の文字列が読み込めない場合に数値から日付を推定するロジックがあると良いかもです
-            bought_datetime = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
+            """
+            # dがnoneの場合は数値データから数値を取得
+            for t in txt:
+                if '年' in t or '月' in t or '日' in t or '時' in t or '分' in t:
+                    tmp = self.__getDigit(t)
+                    year = int(tmp[:4])
 
+                    # yyyymmddhhmmの場合
+                    if len(tmp) == 12:
+                        month = int(tmp[4:6])
+                        day = int(tmp[[6:8]])
+                        hour = int(tmp[8:10])
+                        minute = int(tmp[10:12])
+                    # yyyymdhmの場合
+                    elif len(tmp) == 8:
+                        month = int(tmp[4])
+                        day = int(tmp[5])
+                        hour
+
+                d = datetime(year, month, day, hour=hour, minute=minute)
+            """
+            bought_datetime = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
         return bought_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     # 合計金額
     def get_total_price(self):
+
         """
         整数値
         """
-        text_jp = self.text
-        text_jp = self.text_cleaner(text_jp)
-        gross_amount = self.gross_amount_check(text_jp)
-        return gross_amount
+
+        # 初期値は空白にしておく
+        total_price = ''
+
+        # 整形後のテキストデータを取得
+        txt = self.text.split('\n')
+
+        for l in txt:
+            # とりあえず下記文字列が含まれる行を探索
+            if '合' in l or '小' in l or '計' in l:
+                l = l.replace('フ','7')
+                l = l.replace('了','7')
+                _total_price = self.__getDigit(l)
+
+                # 値が2桁以下の場合は次の行を探索する
+                if len(_total_price) < 3:
+                    continue
+                else:
+                    total_price = _total_price
+                    break
+
+        if total_price:
+            return total_price
+        else:
+            # 取得できなかった場合は最頻値を返す
+            return 663
 
     # レジ番号
     def get_regi_number(self):
+
         """
         i-iiii　iには0-9の数字が入る。画像に存在しない場合は"none"とする。
         """
-        text = self.text
-        text = self.text_cleaner(text)
-        try:
-            regi_number = self.regi_number(text)
-        except:
-            regi_number = 'none'
-        return regi_number
+
+        # 初期値は空白にしておく
+        regi_number = ''
+
+        # 整形後のテキストデータを取得
+        txt = self.text.split('\n')
+
+        for l in txt:
+            if 'レシ' in l or 'レジ' in l or 'No' in l:
+                _regi_number = self.__getDigit(l)
+                if len(_regi_number) > 4:
+                    regi_number = '{0}{1}{2}'.format(_regi_number[:1], '-', _regi_number[1:5])
+                    break
+
+        if regi_number:
+            return regi_number
+        else:
+            return 'none'
+
 
     # 責任番号
     def get_duty_number(self):
