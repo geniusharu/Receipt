@@ -8,6 +8,14 @@ from copy import deepcopy
 from PIL import Image
 from tqdm import tqdm
 
+"""
+画像の前処理用のスクリプト。
+PICT_FOLDER以下の画像に対して、二値化、トリミング、回転を行ったうえでROTATED_FOLDER以下に保存する。
+"""
+
+PICT_FOLDER = "./test" #元画像が保存されているフォルダ
+ROTATE_FOLDER = "./rotateimage_test" # 加工後の画像を保存するフォルダ
+
 # グレースケールへ変換
 def getGrayScaleImage(path):
     img = cv2.imread(path)
@@ -84,61 +92,57 @@ def getContours(img_th,img_th_for_contours):
     rect = getRectByPoints(approx)
     return getPartImageByRect(rect)
 
-def createRotateImage(src):
+def main():
 
-    if os.path.exists(src):
+    if os.path.exists(PICT_FOLDER):
         pass
     else:
-        print(src + "フォルダが存在しないため終了します")
+        print(PICT_FOLDER + "フォルダが存在しないため終了します")
         quit()
-    if os.path.exists("./rotateimage"):
+    if os.path.exists(ROTATE_FOLDER):
         pass
     else:
-        print("rotateimageフォルダを作成します")
-        os.mkdir("./rotateimage")
+        print(str(ROTATE_FOLDER) + "フォルダを作成します")
+        os.mkdir(ROTATE_FOLDER)
 
-    pict_name_list = os.listdir(src)
-    cnt = 0
+    pict_name_list = os.listdir(PICT_FOLDER)
+
     for pict_name in tqdm(sorted(pict_name_list)):
 
         # 画像をグレースケールへ変換
-        img_gray = getGrayScaleImage(src + "/" + pict_name)
+        img_gray = getGrayScaleImage(PICT_FOLDER + "/" + pict_name)
 
         # グレースケール画像を二値画像へ変換
         img_th = getThresholdImage(img_gray)
 
         # 切り取り用の二値画像を別途用意
-        img_th_for_contours = getThresholdImageForContours(src + "/" + pict_name)
+        img_th_for_contours = getThresholdImageForContours(PICT_FOLDER + "/" + pict_name)
 
         tmp = Image.fromarray(img_th_for_contours)
-#        tmp.save("test_" + pict_name)
 
         # 切り取り
         try:
-            # とりあえず実行できるようにindex error時はスキップするように変更しときます。
             img_ext = getContours(img_th,img_th_for_contours)
         except IndexError:
-            continue
+            # IndexErrorの場合はグレースケール画像をそのまま返す
+            img_ext = img_gray
 
         # PIL形式へ変換
         raw_data = Image.fromarray(img_ext)
 
         try:
             rotate_000 = raw_data.rotate(0, expand = True) # 回転させない画像も保存するように変更
-            rotate_000.save("./rotateimage/" + pict_name[:-4] +"_000.jpg")
+            rotate_000.save(ROTATE_FOLDER + "/" + pict_name[:-4] +"_000.jpg")
             rotate_090 = raw_data.rotate(90, expand = True)
-            rotate_090.save("./rotateimage/" + pict_name[:-4] +"_090.jpg")
+            rotate_090.save(ROTATE_FOLDER + "/" + pict_name[:-4] +"_090.jpg")
             rotate_180 = raw_data.rotate(180, expand=True)
-            rotate_180.save("./rotateimage/" + pict_name[:-4] + "_180.jpg")
+            rotate_180.save(ROTATE_FOLDER + "/" + pict_name[:-4] + "_180.jpg")
             rotate_270 = raw_data.rotate(270, expand=True)
-            rotate_270.save("./rotateimage/" + pict_name[:-4] + "_270.jpg")
+            rotate_270.save(ROTATE_FOLDER + "/" + pict_name[:-4] + "_270.jpg")
         except SystemError:
+            # SystemError時はスキップする
+            print(pict_name)
             continue
 
-        #print(pict_path + ' finished') # 変換の進捗確認用に追加
-#        cnt = cnt + 1
-#        if cnt > 10:
-#            break
-
 if __name__ == "__main__":
-    createRotateImage("./train")
+    main()
