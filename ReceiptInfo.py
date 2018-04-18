@@ -307,8 +307,25 @@ class ReceiptInfo(object):
                     total_price = _total_price
                     break
 
+        # 値引き金額を探索
+        flag_discount = False #値引き金額用のフラグ
+        for l in txt:
+            discount = 0 # 値引き額の初期値
+            # 合計or小計以下の行を探索する
+            if '合' in l or '小' in l or '計' in l:
+                flag_discount = True
+
+            # 値引の文字列があれば数値を取得
+            if flag_discount and ('値' in l or '引' in l):
+                discount = self.__getDigit(l)
+                if discount:
+                    #合計金額よりも値引きが小さければ合計金額から減額
+                    if int(total_price) > int(discount):
+                        total_price = int(total_price) - int(discount)
+                        break
+
         if total_price:
-            return total_price
+            return str(total_price)
         else:
             # 取得できなかった場合は最頻値を返す
             return 663
@@ -472,7 +489,7 @@ class ReceiptInfo(object):
 
 if __name__ == '__main__':
     # test
-    img_path = './test/zy1pcx5i.jpg'
+    img_path = './test/a0mkoxr4.jpg'
     rotate_folder = './rotateimage_test/'
 
     receipt = ReceiptInfo(img_path, rotate_folder)
