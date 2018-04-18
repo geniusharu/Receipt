@@ -13,6 +13,93 @@ from PIL import Image
 # 別途推定したCNNモデルをロード
 CNN_MODEL_CN_NAME = load_model('./cn_name/CNN_cn_name.h5')
 
+    # 悪魔の関数を用意しました
+def tel2pref(number):
+    if number in ['011','016','015','013']:
+        return '北海道'
+    elif number in ['017']:
+        return '青森県'
+    elif number in ['018']:
+        return '秋田県'
+    elif number in ['019']: #0193の場合宮城の可能性もある
+        return '岩手県'
+    elif number in ['022']:
+        return '宮城県'
+    elif number in ['023']:
+        return '山形県'
+    elif number in ['024']:
+        return '福島県'
+    elif number in ['028']:
+        return '栃木県'
+    elif number in ['029']:
+        return '茨城県'
+    elif number in ['027']:
+        return '群馬県'
+    elif number in ['049','048']:
+        return '埼玉県'
+    elif number in ['043','047']:
+        return '千葉県'
+    elif number in ['042'] or number[0:2] in ['03']:
+        return '東京都'
+    elif number in ['045','046']:
+        return '神奈川県'
+    elif number in ['025']:
+        return '新潟県'
+    elif number in ['026','002']:
+        return '長野県'
+    elif number in ['055']:
+        return '山梨県'
+    elif number in ['076']: #富山県と石川県はどちらも076から始まるっぽいので、ここはコンビニが多そうな（栄えてそうな）石川を無条件で
+        return '石川県'
+    elif number in ['077']:
+        return '福井県'
+    elif number in ['054','055','053']:
+        return '静岡県'
+    elif number in ['052','056']:
+        return '愛知県'
+    elif number in ['058','057']:
+        return '岐阜県'
+    elif number in ['059']:
+        return '三重県'
+    elif number in ['073']:
+        return '和歌山県'
+    elif number in ['074']:
+        retrun '奈良県'
+    elif number in ['077']:
+        return '京都府'
+    elif number in ['072'] or number[0:2] in ['06']:
+        retrun '大阪府'
+    elif number in ['078','079']:
+        return '兵庫県'
+    elif number in ['085'] # 島根と鳥取
+        return '鳥取県'
+    elif number in ['086']:
+        return '岡山県'
+    elif number in ['082','084']:
+        return '広島県'
+    elif number in ['083']:
+        return '山口県'
+    elif number in ['088']:
+        return '徳島県'
+    elif number in ['087']:
+        return '香川県'
+    elif number in ['089']:
+        return '愛媛県'
+    elif number in ['088']:
+        return '高知県'
+    elif number in ['092','093','094']:
+        return '福岡県'
+    elif number in ['095']: # 佐賀と長崎
+        return '長崎県'
+    elif number in ['096']:
+        return '熊本県'
+    elif number in ['097']:
+        return '大分県'
+    elif number in ['099']:
+        retrun '鹿児島県'
+    elif number in ['098']:
+        return '沖縄県'
+
 class ReceiptInfo(object):
 
     """
