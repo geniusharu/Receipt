@@ -178,8 +178,11 @@ class ReceiptInfo(object):
             return store_pref
         else:
             _store_tel = self.get_store_tel() # 店舗電話番号を取得
-            store_pref = self.tel2pref(_store_tel)
-            return store_pref
+            if _store_tel=='none':
+                return '東京都' # 電話番号不明の場合は東京都に
+            else:
+                store_pref = self.tel2pref(_store_tel[:3])
+                return store_pref
 
     # 店舗電話番号
     def get_store_tel(self):
