@@ -12,7 +12,6 @@ from PIL import Image
 
 # 別途推定したCNNモデルをロード
 CNN_MODEL_CN_NAME = load_model('./cn_name/CNN_cn_name.h5')
-CNN_MODEL_NUM_ITEMS = load_model('./num_items/CNN_num_items.h5')
 
 class ReceiptInfo(object):
 
@@ -276,7 +275,7 @@ class ReceiptInfo(object):
                         day = int(tmp[5])
                         hour
 
-                d = datetime(year, month, day, hour=hour, minute=minute)
+            d = datetime(year, month, day, hour=hour, minute=minute)
             """
             bought_datetime = datetime(2017, 10, 30, hour=12, minute=10) #これが最頻値っぽいです
         return bought_datetime.strftime("%Y-%m-%d %H:%M:%S")
@@ -413,20 +412,38 @@ class ReceiptInfo(object):
         整数値
         """
 
-        # 各画像ごとに各クラスに分類される確率を算出
-        predict_000 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_000)
-        predict_090 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_090)
-        predict_180 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_180)
-        predict_270 = CNN_MODEL_NUM_ITEMS.predict_proba(self.img_array_270)
-        probas = [predict_000, predict_090, predict_180, predict_270]
+        # 初期値は0にしておく
+        num_items = 0
 
-        # 各画像の平均確率を算出
-        average_proba = np.average(probas, axis=0)
+        # 整形後のテキストデータを取得
+        txt = self.text.split('\n')
 
-        # 確率が最大となるクラスを選択
-        predict_class = average_proba.argmax(axis=-1)[0]
+        count = False # 行数カウント用のフラグ
+        for t in txt:
+            # 日付列より下の行からカウントを開始
+            if '年' in t or '月' in t or '日' in t:
+                count = True
+                continue
 
-        return self.num_items[predict_class]
+            # 責任番号の行が存在する場合はカウントしない
+            if 'レシ' in t or 'レジ' in t or 'No' in t:
+                continue
+
+            # 小計or合計行でカウント終了
+            if count and ('合' in t or '小' in t or '計' in t) and num_items>0:
+                count = False
+                break
+
+            # 行内に数値があれば商品１個とカウント
+            if count and self.__getDigit(t):
+                num_items += 1
+                continue
+
+        # 個数が0の場合はとりあえず１個にしておく
+        if num_items==0:
+            num_items+=1
+
+        return num_items
 
     # 購入した商品情報（キャンペーン対象のみ）
     def get_items(self):
