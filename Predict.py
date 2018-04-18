@@ -35,7 +35,6 @@ def allReceiptInfo(folder, rotate_folder):
             pict_info['card_number'] = receipt.get_card_number()
             pict_info['num_items'] = receipt.get_num_items()
             pict_info['items'] = receipt.get_items()
-#            pict_info['pict_name'] = pict_name
 
             res[pict_name] = pict_info
         except OSError:
